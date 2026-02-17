@@ -1,0 +1,27 @@
+# Render Blueprint — Static Site (Vite + React)
+# https://render.com/docs/blueprint-spec
+#
+# Деплой: підключіть репозиторій у Render Dashboard → New → Static Site
+# або використовуйте Blueprint: New → Blueprint → підключіть repo з render.yaml
+#
+# Env vars (обов'язково додайте в Dashboard → Environment):
+#   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+# Опціонально: GEMINI_API_KEY
+
+services:
+  - type: web
+    name: pervozhub
+    runtime: static
+
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
