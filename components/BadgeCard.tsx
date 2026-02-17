@@ -50,8 +50,14 @@ export const BadgeCard: React.FC<BadgeCardProps> = ({ group, onClick, className 
           aria-hidden
         />
       )}
-      {/* Glass overlay */}
-      <div className="absolute inset-0 bg-white/10 backdrop-blur-[1px] rounded-2xl pointer-events-none" aria-hidden />
+      {/* NFT sticker style: crisp edge, no frosted overlay */}
+      <div
+        className="absolute inset-0 rounded-2xl pointer-events-none border-2 border-white/40"
+        style={{
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.1)'
+        }}
+        aria-hidden
+      />
       {/* Count badge — top right */}
       {count > 1 && (
         <div className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-white/25 backdrop-blur-md border border-white/30 shadow-lg">

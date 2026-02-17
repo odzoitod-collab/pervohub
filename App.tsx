@@ -86,6 +86,7 @@ const App: React.FC = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showTrustBox, setShowTrustBox] = useState(false);
   const [awardBadgeStudent, setAwardBadgeStudent] = useState<User | null>(null);
+  const [badgeHistoryOpen, setBadgeHistoryOpen] = useState(false);
   const [badgeRefreshTrigger, setBadgeRefreshTrigger] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try { return localStorage.getItem('sidebarOpen') !== 'false'; } catch { return true; }
@@ -621,7 +622,8 @@ const App: React.FC = () => {
     showMoodModal ||
     !!joinTeamStartup ||
     !!teamRequestsStartup ||
-    !!awardBadgeStudent;
+    !!awardBadgeStudent ||
+    badgeHistoryOpen;
 
   // --- Navigation Components ---
   const CreateNavItem = ({ onClick, icon: Icon, label, compact }: { onClick: () => void; icon: React.ElementType; label: string; compact?: boolean }) => (
@@ -745,7 +747,7 @@ const App: React.FC = () => {
               </div>
             </div>
             {/* Відзнаки — горизонтальний скрол */}
-            <ProfileBadges userId={userToDisplay.id} refreshTrigger={badgeRefreshTrigger} className="mb-6" />
+            <ProfileBadges userId={userToDisplay.id} refreshTrigger={badgeRefreshTrigger} className="mb-6" onBadgeHistoryOpen={setBadgeHistoryOpen} />
             {/* Stats row — Instagram style */}
             <div className="flex justify-center sm:justify-start gap-8 sm:gap-12 mt-6 pt-6 border-t border-[#efefef] dark:border-[#262626]">
               <div className="text-center sm:text-left">

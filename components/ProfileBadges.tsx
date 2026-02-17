@@ -9,11 +9,17 @@ interface ProfileBadgesProps {
   userId: string;
   refreshTrigger?: number;
   className?: string;
+  onBadgeHistoryOpen?: (open: boolean) => void;
 }
 
-export const ProfileBadges: React.FC<ProfileBadgesProps> = ({ userId, refreshTrigger = 0, className = '' }) => {
+export const ProfileBadges: React.FC<ProfileBadgesProps> = ({ userId, refreshTrigger = 0, className = '', onBadgeHistoryOpen }) => {
   const { groups, loading, error } = useUserBadges(userId, refreshTrigger);
   const [selectedGroup, setSelectedGroup] = useState<UserBadgeGroup | null>(null);
+
+  const handleSelectGroup = (group: UserBadgeGroup | null) => {
+    setSelectedGroup(group);
+    onBadgeHistoryOpen?.(!!group);
+  };
 
   if (loading) {
     return (
@@ -54,7 +60,7 @@ export const ProfileBadges: React.FC<ProfileBadgesProps> = ({ userId, refreshTri
             <div key={group.badge.id} className="snap-center flex-shrink-0">
               <BadgeCard
                 group={group}
-                onClick={() => setSelectedGroup(group)}
+                onClick={() => handleSelectGroup(group)}
               />
             </div>
           ))}
@@ -63,7 +69,7 @@ export const ProfileBadges: React.FC<ProfileBadgesProps> = ({ userId, refreshTri
       {selectedGroup && (
         <BadgeHistoryModal
           group={selectedGroup}
-          onClose={() => setSelectedGroup(null)}
+          onClose={() => handleSelectGroup(null)}
         />
       )}
     </>
