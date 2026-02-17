@@ -51,21 +51,39 @@ export const getCurrentUser = async (): Promise<User | null> => {
   };
 };
 
+export const getProfile = async (userId: string): Promise<User | null> => {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error || !profile) return null;
+  return mapProfileToUser(profile);
+};
+
 export const updateUserProfile = async (userId: string, updates: Partial<User>) => {
+  const payload: Record<string, unknown> = {};
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.grade !== undefined) payload.grade = updates.grade;
+  if (updates.bio !== undefined) payload.bio = updates.bio;
+  if (updates.avatar !== undefined) payload.avatar_url = updates.avatar;
   const { data, error } = await supabase
     .from('profiles')
-    .update({
-      name: updates.name,
-      grade: updates.grade,
-      bio: updates.bio,
-      avatar_url: updates.avatar
-    })
+    .update(payload)
     .eq('id', userId)
     .select()
     .single();
-    
   if (error) throw error;
   return mapProfileToUser(data);
+};
+
+/** Зберегти OneSignal Player ID для поточного користувача (для пуш-уведомлень) */
+export const saveOnesignalId = async (userId: string, onesignalId: string | null): Promise<void> => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ onesignal_id: onesignalId })
+    .eq('id', userId);
+  if (error) throw error;
 };
 
 // --- Storage ---
@@ -399,6 +417,17 @@ export const addComment = async (userId: string, postId: string, text: string) =
 
 // --- Search ---
 
+/** Список профілів без пошукового запиту (для початкового показу в пошуку акаунтів/чату) */
+export const fetchProfilesList = async (limit = 40): Promise<User[]> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('name', { ascending: true })
+    .limit(limit);
+  if (error) return [];
+  return (data || []).map((p: any) => mapProfileToUser(p));
+};
+
 export const searchProfiles = async (query: string): Promise<User[]> => {
   if (!query.trim()) return [];
   const q = query.trim().replace(/%/g, '').slice(0, 50);
@@ -419,25 +448,140 @@ export interface TrustMessage {
   id: string;
   message: string;
   created_at: string;
+  is_anonymous: boolean;
+  author?: { name: string; grade?: string };
 }
 
-export const sendTrustMessage = async (message: string) => {
-  const { error } = await supabase.from('trust_box').insert({ message });
+export const sendTrustMessage = async (message: string, sendAnonymously: boolean, userId: string | null) => {
+  const payload: { message: string; is_anonymous: boolean; author_id?: string | null } = {
+    message,
+    is_anonymous: sendAnonymously
+  };
+  if (!sendAnonymously && userId) payload.author_id = userId;
+  else payload.author_id = null;
+  const { error } = await supabase.from('trust_box').insert(payload);
   if (error) throw error;
 };
 
 export const fetchTrustMessages = async (): Promise<TrustMessage[]> => {
   const { data, error } = await supabase
     .from('trust_box')
-    .select('id, message, created_at')
+    .select('id, message, created_at, is_anonymous, author:profiles!author_id(name, grade)')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return (data || []).map((m: any) => ({
     id: m.id,
     message: m.message,
-    created_at: new Date(m.created_at).toLocaleString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    created_at: new Date(m.created_at).toLocaleString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    is_anonymous: m.is_anonymous ?? true,
+    author: m.author ? { name: m.author.name || 'Користувач', grade: m.author.grade } : undefined
   }));
+};
+
+// --- Direct Messages (Дірект) ---
+
+/** Повертає [participant_1, participant_2] так, щоб participant_1 < participant_2 за UUID */
+function orderedPair(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a];
+}
+
+export const getOrCreateConversation = async (myId: string, peerId: string): Promise<{ id: string }> => {
+  const [p1, p2] = orderedPair(myId, peerId);
+  const { data: existing } = await supabase
+    .from('dm_conversations')
+    .select('id')
+    .eq('participant_1', p1)
+    .eq('participant_2', p2)
+    .maybeSingle();
+  if (existing) return { id: existing.id };
+  const { data: created, error } = await supabase
+    .from('dm_conversations')
+    .insert({ participant_1: p1, participant_2: p2 })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return { id: created.id };
+};
+
+export interface DMConversationRow {
+  id: string;
+  participant_1: string;
+  participant_2: string;
+  updated_at: string;
+  peer?: any;
+  last_message?: { content: string; created_at: string; sender_id: string } | null;
+}
+
+export const fetchConversations = async (myId: string): Promise<import('../types').DMConversation[]> => {
+  const { data: rows, error } = await supabase
+    .from('dm_conversations')
+    .select('id, participant_1, participant_2, updated_at')
+    .or(`participant_1.eq.${myId},participant_2.eq.${myId}`)
+    .order('updated_at', { ascending: false });
+
+  if (error) throw error;
+  if (!rows || rows.length === 0) return [];
+
+  const convIds = rows.map((r: any) => r.id);
+  const { data: lastMessages } = await supabase
+    .from('dm_messages')
+    .select('conversation_id, content, created_at, sender_id')
+    .in('conversation_id', convIds)
+    .order('created_at', { ascending: false });
+
+  const lastByConv = new Map<string, { content: string; created_at: string; sender_id: string }>();
+  (lastMessages || []).forEach((m: any) => {
+    if (!lastByConv.has(m.conversation_id)) lastByConv.set(m.conversation_id, m);
+  });
+
+  const peerIds = new Set<string>();
+  rows.forEach((r: any) => {
+    if (r.participant_1 !== myId) peerIds.add(r.participant_1);
+    if (r.participant_2 !== myId) peerIds.add(r.participant_2);
+  });
+  const { data: profiles } = await supabase.from('profiles').select('id, name, avatar_url, role, grade').in('id', [...peerIds]);
+  const profileMap = new Map((profiles || []).map((p: any) => [p.id, mapProfileToUser(p)]));
+
+  return rows.map((r: any) => {
+    const peerId = r.participant_1 === myId ? r.participant_2 : r.participant_1;
+    const peer = profileMap.get(peerId) || { id: peerId, name: 'Користувач', avatar: '', role: 'Учень' as UserRole };
+    const last = lastByConv.get(r.id);
+    return {
+      id: r.id,
+      peer,
+      lastMessage: last
+        ? {
+            content: last.content,
+            created_at: new Date(last.created_at).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+            isFromMe: last.sender_id === myId
+          }
+        : undefined,
+      updated_at: r.updated_at
+    };
+  });
+};
+
+export const fetchDMMessages = async (conversationId: string, myId: string): Promise<import('../types').DMMessage[]> => {
+  const { data, error } = await supabase
+    .from('dm_messages')
+    .select('id, sender_id, content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map((m: any) => ({
+    id: m.id,
+    sender_id: m.sender_id,
+    content: m.content,
+    created_at: new Date(m.created_at).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    isFromMe: m.sender_id === myId
+  }));
+};
+
+export const sendDMMessage = async (conversationId: string, senderId: string, content: string): Promise<void> => {
+  const { error } = await supabase.from('dm_messages').insert({ conversation_id: conversationId, sender_id: senderId, content: content.trim() });
+  if (error) throw error;
 };
 
 // --- Bell Schedule ---
@@ -936,4 +1080,41 @@ export const awardBadge = async (
       comment: comment.trim()
     });
   if (error) throw error;
+};
+
+// --- Подяки вчителю (тільки від учнів, тільки для вчителів) ---
+
+export const sendThankToTeacher = async (
+  toTeacherId: string,
+  fromUserId: string,
+  message: string
+): Promise<void> => {
+  const { error } = await supabase.from('teacher_thanks').insert({
+    from_user_id: fromUserId,
+    to_user_id: toTeacherId,
+    message: message.trim() || null
+  });
+  if (error) throw error;
+};
+
+export const fetchTeacherThanks = async (teacherId: string): Promise<import('../types').TeacherThank[]> => {
+  const { data, error } = await supabase
+    .from('teacher_thanks')
+    .select('id, message, created_at, from_user:profiles!from_user_id(id, name, avatar_url, role, grade)')
+    .eq('to_user_id', teacherId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map((t: any) => ({
+    id: t.id,
+    from_user: mapProfileToUser(t.from_user || {}),
+    message: t.message ?? null,
+    created_at: new Date(t.created_at).toLocaleString('uk-UA', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }));
 };

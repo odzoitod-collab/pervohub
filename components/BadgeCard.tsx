@@ -26,58 +26,45 @@ export const BadgeCard: React.FC<BadgeCardProps> = ({ group, onClick, className 
     <button
       type="button"
       onClick={onClick}
+      title={`${badge.name} (${badge.rarity})`}
       className={`
-        relative w-[140px] min-w-[140px] h-[180px] rounded-2xl overflow-hidden
-        flex flex-col items-center justify-center p-4
-        text-left
-        transition-all duration-300 hover:scale-105 hover:-translate-y-1
+        relative w-12 h-12 min-w-[3rem] min-h-[3rem] rounded-full overflow-hidden
+        flex items-center justify-center
+        transition-all duration-200 hover:scale-110 active:scale-95
         focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-transparent
         ${className}
       `}
       style={{
         background: `linear-gradient(135deg, ${badge.color_from}, ${badge.color_to})`,
         boxShadow: isLegendary
-          ? `0 0 30px ${badge.color_to}80, 0 8px 24px rgba(0,0,0,0.25)`
-          : '0 8px 24px rgba(0,0,0,0.2)'
+          ? `0 0 16px ${badge.color_to}60, 0 4px 12px rgba(0,0,0,0.2)`
+          : '0 4px 12px rgba(0,0,0,0.18)'
       }}
     >
       {isLegendary && (
         <div
-          className="absolute inset-0 rounded-2xl animate-pulse opacity-60 pointer-events-none"
-          style={{
-            boxShadow: `inset 0 0 40px ${badge.color_to}60`
-          }}
+          className="absolute inset-0 rounded-full animate-pulse opacity-50 pointer-events-none"
+          style={{ boxShadow: `inset 0 0 20px ${badge.color_to}50` }}
           aria-hidden
         />
       )}
-      {/* NFT sticker style: crisp edge, no frosted overlay */}
       <div
-        className="absolute inset-0 rounded-2xl pointer-events-none border-2 border-white/40"
-        style={{
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -1px 0 rgba(0,0,0,0.1)'
-        }}
+        className="absolute inset-0 rounded-full pointer-events-none border-2 border-white/40"
+        style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.08)' }}
         aria-hidden
       />
-      {/* Count badge — top right */}
       {count > 1 && (
-        <div className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-white/25 backdrop-blur-md border border-white/30 shadow-lg">
-          <span className="text-xs font-bold text-white drop-shadow">×{count}</span>
+        <div className="absolute -top-0.5 -right-0.5 min-w-[1.125rem] h-[1.125rem] rounded-full bg-white/90 border border-white flex items-center justify-center">
+          <span className="text-[10px] font-bold text-[#262626]">×{count}</span>
         </div>
       )}
-      {/* Icon */}
-      <div className="relative z-10 w-16 h-16 flex items-center justify-center mb-2 rounded-xl bg-black/10">
+      <div className="relative z-10 flex items-center justify-center">
         {isEmoji(badge.icon) ? (
-          <span className="text-4xl" role="img" aria-hidden>{badge.icon}</span>
+          <span className="text-2xl leading-none" role="img" aria-hidden>{badge.icon}</span>
         ) : (
-          <img src={badge.icon} alt="" className="w-10 h-10 object-contain" />
+          <img src={badge.icon} alt="" className="w-6 h-6 object-contain" />
         )}
       </div>
-      <span className="relative z-10 text-sm font-bold text-white drop-shadow line-clamp-2 text-center leading-tight">
-        {badge.name}
-      </span>
-      <span className="relative z-10 text-[10px] font-medium text-white/90 uppercase tracking-wider mt-0.5">
-        {badge.rarity}
-      </span>
     </button>
   );
 };

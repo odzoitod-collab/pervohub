@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Post, User, UserRole, isSchoolAdmin } from '../types';
 import { MessageSquare, Heart, AlertCircle, Trash2, MoreVertical } from 'lucide-react';
 
@@ -21,6 +21,21 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
     isSchoolAdmin(currentUser.role)
   );
 
+  const imagesScrollRef = useRef<HTMLDivElement>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+
+  // Sync carousel index when user scrolls (for 4+ images)
+  useEffect(() => {
+    const el = imagesScrollRef.current;
+    if (!el || !post.images || post.images.length < 4) return;
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      setCarouselIndex(Math.min(idx, post.images!.length - 1));
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [post.images?.length]);
+
   // Function to render images based on count
   const renderImages = () => {
     if (!post.images || post.images.length === 0) return null;
@@ -38,44 +53,65 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
       );
     }
 
-    if (post.images.length === 2) {
+    // 2 або 3 фото — колаж однакового розміру
+    if (post.images.length === 2 || post.images.length === 3) {
+      const cols = post.images.length === 2 ? 2 : 3;
       return (
-        <div className="mt-2 md:mt-3 grid grid-cols-2 gap-0.5 md:gap-1 rounded-xl overflow-hidden">
+        <div className="mt-2 md:mt-3 grid gap-0.5 md:gap-1 rounded-xl overflow-hidden" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
           {post.images.map((img, idx) => (
-            <img 
-              key={idx} 
-              src={img} 
-              alt={`Post content ${idx}`} 
-              className="w-full h-48 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+            <button
+              key={idx}
+              type="button"
+              className="relative w-full aspect-square min-h-[140px] md:min-h-[160px] overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-inset"
               onClick={() => onImageClick(img)}
-            />
+            >
+              <img 
+                src={img} 
+                alt="" 
+                className="absolute inset-0 w-full h-full object-cover hover:opacity-95 transition-opacity"
+              />
+            </button>
           ))}
         </div>
       );
     }
 
-      return (
-      <div className="mt-2 md:mt-3 grid grid-cols-2 gap-0.5 md:gap-1 rounded-xl overflow-hidden">
-        <img 
-            src={post.images[0]} 
-            className="w-full h-64 object-cover col-span-2 cursor-pointer"
-            onClick={() => onImageClick(post.images![0])}
-        />
-        <img 
-            src={post.images[1]} 
-            className="w-full h-32 object-cover cursor-pointer"
-            onClick={() => onImageClick(post.images![1])}
-        />
-        <div className="relative w-full h-32 cursor-pointer" onClick={() => onImageClick(post.images![2])}>
-            <img 
-                src={post.images[2]} 
-                className="w-full h-32 object-cover"
+    // 4+ фото — горизонтальний скрол як в Instagram, однаковий розмір слайдів
+    return (
+      <div className="mt-2 md:mt-3">
+        <div
+          ref={imagesScrollRef}
+          className="overflow-x-auto snap-x snap-mandatory flex rounded-xl overflow-hidden no-scrollbar -mx-1"
+          style={{ scrollBehavior: 'smooth' }}
+        >
+          {post.images.map((img, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="flex-shrink-0 w-full min-w-full aspect-square max-h-[70vh] md:max-h-[420px] snap-center overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-inset"
+              onClick={() => onImageClick(img)}
+            >
+              <img 
+                src={img} 
+                alt="" 
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+        <div className="flex justify-center gap-1.5 mt-2">
+          {post.images.map((_, idx) => (
+            <button
+              key={idx}
+              type="button"
+              aria-label={`Фото ${idx + 1}`}
+              onClick={() => {
+                imagesScrollRef.current?.scrollTo({ left: idx * (imagesScrollRef.current?.offsetWidth ?? 0), behavior: 'smooth' });
+                setCarouselIndex(idx);
+              }}
+              className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === carouselIndex ? 'bg-[#0095f6] scale-125' : 'bg-[#c4c4c4] dark:bg-[#525252] hover:bg-[#8e8e8e] dark:hover:bg-[#737373]'}`}
             />
-            {post.images.length > 3 && (
-                <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center text-white font-bold text-lg">
-                    +{post.images.length - 3}
-                </div>
-            )}
+          ))}
         </div>
       </div>
     );

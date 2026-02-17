@@ -1,13 +1,49 @@
-/* Telegram/Instagram-style: clean, borderless, safe areas */
+/* --- Адаптація під всі браузери та пристрої --- */
 html {
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   min-height: 100%;
+  min-height: 100dvh;
   min-height: -webkit-fill-available;
+  box-sizing: border-box;
+}
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   min-height: -webkit-fill-available;
   overflow-x: hidden;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Фіксована висота нижнього меню — не піднімається/не опускається на різних пристроях */
+.mobile-nav-fixed {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  min-height: 56px;
+  height: auto;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+  z-index: 100;
+}
+@supports (padding: max(0px)) {
+  .mobile-nav-fixed {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Відступ контенту над нижнім меню (той самий розмір, щоб не перекривало) */
+.mobile-nav-spacer {
+  padding-bottom: calc(56px + max(0.5rem, env(safe-area-inset-bottom, 0px)));
 }
 
 /* Hide scrollbars for feed / modals (Telegram-like) */
@@ -19,21 +55,37 @@ body {
   scrollbar-width: none;
 }
 
-/* Safe area: iOS Home indicator, notch */
+/* Safe area: iOS Home indicator, notch, вирізи */
 .safe-area-pb {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
 }
 .safe-area-pt {
-  padding-top: env(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 .pb-safe {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Touch targets: мінімум 44x44px для кнопок/іконок */
+/* Верхній sticky-хедер: стабільний на iOS/Safari */
+.sticky-header {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 /* Touch targets: мінімум 44x44px для кнопок/іконок */
 .touch-target {
   min-width: 44px;
   min-height: 44px;
+}
+
+/* Запобігання "стрибкам" при скролі на iOS */
+@supports (-webkit-touch-callout: none) {
+  .min-h-\[100dvh\] {
+    min-height: -webkit-fill-available;
+  }
 }
 
 @keyframes toast-in {

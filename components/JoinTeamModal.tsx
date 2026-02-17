@@ -59,14 +59,14 @@ export const JoinTeamModal: React.FC<JoinTeamModalProps> = ({
         </p>
 
         <div>
-          <label className="text-xs font-bold text-slate-500 uppercase ml-1 block mb-2">
+          <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1 block mb-2">
             Як я можу допомогти?
           </label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Опишіть, чим можете бути корисні..."
-            className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-4 text-sm min-h-[100px] focus:ring-2 focus:ring-[#0095f6] focus:outline-none resize-none text-slate-900 dark:text-[#fafafa] placeholder-slate-400"
+            className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-4 text-sm min-h-[100px] focus:ring-2 focus:ring-[#0095f6] focus:outline-none resize-none text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
             rows={4}
           />
         </div>

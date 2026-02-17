@@ -185,11 +185,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentUser, onToast }) 
             <div className="space-y-3">
               {localBells.map((b, idx) => (
                 <div key={idx} className="flex items-center gap-3 flex-wrap">
-                  <input type="number" className="w-16 bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-lg px-3 py-2 text-sm font-bold" value={b.lesson_number} onChange={e => handleUpdateBell(idx, 'lesson_number', parseInt(e.target.value) || 0)} />
-                  <input type="time" className="bg-slate-50 dark:bg-[#262626] border rounded-lg px-3 py-2 text-sm" value={b.start_time} onChange={e => handleUpdateBell(idx, 'start_time', e.target.value)} />
-                  <span className="text-slate-400">–</span>
-                  <input type="time" className="bg-slate-50 dark:bg-[#262626] border rounded-lg px-3 py-2 text-sm" value={b.end_time} onChange={e => handleUpdateBell(idx, 'end_time', e.target.value)} />
-                  <input type="text" className="flex-1 min-w-[140px] bg-slate-50 dark:bg-[#262626] border rounded-lg px-3 py-2 text-sm" placeholder="Назва уроку (опц.)" value={b.name || ''} onChange={e => handleUpdateBell(idx, 'name', e.target.value)} />
+                  <input type="number" className="w-16 bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-lg px-3 py-2 text-sm font-bold text-[#262626] dark:text-[#fafafa]" value={b.lesson_number} onChange={e => handleUpdateBell(idx, 'lesson_number', parseInt(e.target.value) || 0)} />
+                  <input type="time" className="bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-lg px-3 py-2 text-sm text-[#262626] dark:text-[#fafafa]" value={b.start_time} onChange={e => handleUpdateBell(idx, 'start_time', e.target.value)} />
+                  <span className="text-slate-400 dark:text-[#737373]">–</span>
+                  <input type="time" className="bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-lg px-3 py-2 text-sm text-[#262626] dark:text-[#fafafa]" value={b.end_time} onChange={e => handleUpdateBell(idx, 'end_time', e.target.value)} />
+                  <input type="text" className="flex-1 min-w-[140px] bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-lg px-3 py-2 text-sm text-[#262626] dark:text-[#fafafa] placeholder-[#737373] dark:placeholder-[#a3a3a3]" placeholder="Назва уроку (опц.)" value={b.name || ''} onChange={e => handleUpdateBell(idx, 'name', e.target.value)} />
                   <button onClick={() => setLocalBells(localBells.filter((_, i) => i !== idx))} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg"><Trash2 size={18} /></button>
                 </div>
               ))}

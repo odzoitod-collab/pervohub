@@ -229,31 +229,31 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
     <div className="pb-24 md:pb-0 animate-fade-in space-y-6">
       {/* Countdown to nearest event */}
       {nextEvent && !isPast && diff && (
-        <div className="bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <Bell size={24} />
-            <span className="font-bold text-lg">Найближча подія: {nextEvent.title}</span>
+        <div className="bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 rounded-xl p-3 sm:p-4 text-white shadow-lg">
+          <div className="flex items-center gap-1.5 mb-2 sm:mb-3">
+            <Bell size={18} className="flex-shrink-0 sm:w-5 sm:h-5" />
+            <span className="font-bold text-sm sm:text-base truncate">Найближча подія: {nextEvent.title}</span>
           </div>
-          <div className="flex flex-wrap gap-4">
-            <div className="bg-white/20 backdrop-blur rounded-xl px-5 py-3 text-center min-w-[70px]">
-              <div className="text-2xl font-black">{diff.days}</div>
-              <div className="text-xs font-semibold opacity-90">днів</div>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+            <div className="bg-white/20 backdrop-blur rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-center min-w-[52px] sm:min-w-[58px]">
+              <div className="text-lg sm:text-xl font-black leading-tight">{diff.days}</div>
+              <div className="text-[10px] sm:text-xs font-semibold opacity-90">днів</div>
             </div>
-            <div className="bg-white/20 backdrop-blur rounded-xl px-5 py-3 text-center min-w-[70px]">
-              <div className="text-2xl font-black">{diff.hours}</div>
-              <div className="text-xs font-semibold opacity-90">год</div>
+            <div className="bg-white/20 backdrop-blur rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-center min-w-[52px] sm:min-w-[58px]">
+              <div className="text-lg sm:text-xl font-black leading-tight">{diff.hours}</div>
+              <div className="text-[10px] sm:text-xs font-semibold opacity-90">год</div>
             </div>
-            <div className="bg-white/20 backdrop-blur rounded-xl px-5 py-3 text-center min-w-[70px]">
-              <div className="text-2xl font-black">{diff.mins}</div>
-              <div className="text-xs font-semibold opacity-90">хв</div>
+            <div className="bg-white/20 backdrop-blur rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-center min-w-[52px] sm:min-w-[58px]">
+              <div className="text-lg sm:text-xl font-black leading-tight">{diff.mins}</div>
+              <div className="text-[10px] sm:text-xs font-semibold opacity-90">хв</div>
             </div>
-            <div className="bg-white/20 backdrop-blur rounded-xl px-5 py-3 text-center min-w-[70px]">
-              <div className="text-2xl font-black">{diff.secs}</div>
-              <div className="text-xs font-semibold opacity-90">сек</div>
+            <div className="bg-white/20 backdrop-blur rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-center min-w-[52px] sm:min-w-[58px]">
+              <div className="text-lg sm:text-xl font-black leading-tight">{diff.secs}</div>
+              <div className="text-[10px] sm:text-xs font-semibold opacity-90">сек</div>
             </div>
           </div>
-          <p className="text-white/90 text-sm mt-3">
-            {new Date(nextEvent.event_date).toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <p className="text-white/90 text-[11px] sm:text-xs mt-2 line-clamp-1">
+            {new Date(nextEvent.event_date).toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
             {nextEvent.event_time && ` о ${nextEvent.event_time}`}
           </p>
         </div>
@@ -295,26 +295,26 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
                 <div key={idx} className="flex items-center gap-2 flex-wrap">
                   <input
                     type="number"
-                    className="w-14 bg-slate-50 dark:bg-[#262626] border rounded-lg px-2 py-1.5 text-sm font-bold"
+                    className="w-14 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-lg px-2 py-1.5 text-sm font-bold text-[#262626] dark:text-[#fafafa]"
                     value={b.lesson_number}
                     onChange={e => handleUpdateBell(idx, 'lesson_number', parseInt(e.target.value) || 0)}
                   />
                   <input
                     type="time"
-                    className="bg-slate-50 dark:bg-[#262626] border rounded-lg px-2 py-1.5 text-sm"
+                    className="bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-lg px-2 py-1.5 text-sm text-[#262626] dark:text-[#fafafa]"
                     value={b.start_time}
                     onChange={e => handleUpdateBell(idx, 'start_time', e.target.value)}
                   />
-                  <span className="text-slate-400">–</span>
+                  <span className="text-slate-400 dark:text-[#737373]">–</span>
                   <input
                     type="time"
-                    className="bg-slate-50 dark:bg-[#262626] border rounded-lg px-2 py-1.5 text-sm"
+                    className="bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-lg px-2 py-1.5 text-sm text-[#262626] dark:text-[#fafafa]"
                     value={b.end_time}
                     onChange={e => handleUpdateBell(idx, 'end_time', e.target.value)}
                   />
                   <input
                     type="text"
-                    className="flex-1 min-w-[120px] bg-slate-50 dark:bg-[#262626] border rounded-lg px-2 py-1.5 text-sm"
+                    className="flex-1 min-w-[120px] bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-lg px-2 py-1.5 text-sm text-[#262626] dark:text-[#fafafa] placeholder-[#737373] dark:placeholder-[#a3a3a3]"
                     placeholder="Назва уроку (опц.)"
                     value={b.name || ''}
                     onChange={e => handleUpdateBell(idx, 'name', e.target.value)}
@@ -439,8 +439,8 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white dark:bg-[#171717] w-full max-w-md rounded-2xl shadow-xl p-6 border border-[#efefef] dark:border-[#262626]">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">{editingEvent ? 'Редагувати подію' : 'Нова подія'}</h3>
-              <button onClick={() => setShowEventForm(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-[#262626] rounded-lg">
+              <h3 className="font-bold text-lg text-[#262626] dark:text-[#fafafa]">{editingEvent ? 'Редагувати подію' : 'Нова подія'}</h3>
+              <button onClick={() => setShowEventForm(false)} className="p-2 text-[#262626] dark:text-[#fafafa] hover:bg-slate-100 dark:hover:bg-[#262626] rounded-lg">
                 <X size={20} />
               </button>
             </div>
@@ -449,7 +449,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
                 <label className="block text-sm font-semibold text-[#737373] dark:text-[#a3a3a3] mb-1">Назва</label>
                 <input
                   type="text"
-                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3"
+                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3 text-[#262626] dark:text-[#fafafa] placeholder-[#737373] dark:placeholder-[#a3a3a3]"
                   placeholder="Наприклад: Новий рік"
                   value={eventForm.title}
                   onChange={e => setEventForm(f => ({ ...f, title: e.target.value }))}
@@ -459,7 +459,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
                 <label className="block text-sm font-semibold text-[#737373] dark:text-[#a3a3a3] mb-1">Дата</label>
                 <input
                   type="date"
-                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3"
+                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3 text-[#262626] dark:text-[#fafafa]"
                   value={eventForm.event_date}
                   onChange={e => setEventForm(f => ({ ...f, event_date: e.target.value }))}
                 />
@@ -468,7 +468,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
                 <label className="block text-sm font-semibold text-[#737373] dark:text-[#a3a3a3] mb-1">Час (опц.)</label>
                 <input
                   type="time"
-                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3"
+                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3 text-[#262626] dark:text-[#fafafa]"
                   value={eventForm.event_time}
                   onChange={e => setEventForm(f => ({ ...f, event_time: e.target.value }))}
                 />
@@ -476,7 +476,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ currentUser, onT
               <div>
                 <label className="block text-sm font-semibold text-[#737373] dark:text-[#a3a3a3] mb-1">Опис (опц.)</label>
                 <textarea
-                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3 resize-none"
+                  className="w-full bg-slate-50 dark:bg-[#262626] border border-[#e5e5e5] dark:border-[#404040] rounded-xl px-4 py-3 resize-none text-[#262626] dark:text-[#fafafa] placeholder-[#737373] dark:placeholder-[#a3a3a3]"
                   rows={3}
                   placeholder="Короткий опис події..."
                   value={eventForm.description}

@@ -1,7 +1,7 @@
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
-export type RealtimeTables = 'posts' | 'likes' | 'comments' | 'startups' | 'startup_votes' | 'lost_items';
+export type RealtimeTables = 'posts' | 'likes' | 'comments' | 'startups' | 'startup_votes' | 'lost_items' | 'profiles' | 'user_badges' | 'startup_team_requests';
 
 type RealtimeCallback = (table: RealtimeTables) => void;
 
@@ -32,6 +32,7 @@ export function subscribeRealtime(onRefresh: RealtimeCallback): () => void {
   const channel = supabase
     .channel('schoolhub-realtime')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, () => refresh('posts'))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'posts' }, () => refresh('posts'))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, () => refresh('posts'))
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'likes' }, () => refresh('posts'))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'likes' }, () => refresh('posts'))
@@ -41,6 +42,10 @@ export function subscribeRealtime(onRefresh: RealtimeCallback): () => void {
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'startup_votes' }, () => refresh('startup_votes'))
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'startup_votes' }, () => refresh('startup_votes'))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'lost_items' }, () => refresh('lost_items'))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => refresh('profiles'))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => refresh('profiles'))
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'user_badges' }, () => refresh('user_badges'))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'startup_team_requests' }, () => refresh('startup_team_requests'))
     .subscribe();
 
   return () => {

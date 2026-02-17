@@ -51,11 +51,11 @@ export const ProfileBadges: React.FC<ProfileBadgesProps> = ({ userId, refreshTri
   return (
     <>
       <section className={`${className}`} aria-label="Відзнаки">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mt-3 mb-3">
           <Award size={18} className="text-[#0095f6]" />
           <h3 className="text-sm font-bold text-[#262626] dark:text-[#fafafa]">Відзнаки</h3>
         </div>
-        <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory flex gap-4 pb-2 -mx-1 px-1">
+        <div className="overflow-x-auto no-scrollbar snap-x snap-mandatory flex gap-2 pb-2 -mx-1 px-1">
           {groups.map((group) => (
             <div key={group.badge.id} className="snap-center flex-shrink-0">
               <BadgeCard

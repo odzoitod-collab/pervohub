@@ -61,8 +61,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-2xl border border-[#efefef] overflow-hidden shadow-sm">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-[#171717] w-full max-w-md rounded-2xl border border-[#efefef] dark:border-[#262626] overflow-hidden shadow-sm">
         {/* Header */}
         <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full opacity-10">
@@ -83,7 +83,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
         {/* Form Container */}
         <div className="p-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-6 text-center">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-[#fafafa] mb-6 text-center">
             {isLogin ? 'З поверненням!' : 'Створити акаунт'}
           </h2>
 
@@ -91,14 +91,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             {!isLogin && (
               <div className="space-y-4 animate-slide-up">
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                  <UserIcon className="absolute left-3 top-3.5 text-slate-400 dark:text-[#737373]" size={18} />
                   <input 
                     type="text" 
                     placeholder="Прізвище та Ім'я"
                     required
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900"
+                    className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                   />
                 </div>
                 
@@ -106,7 +106,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                     <select 
                       value={role}
                       onChange={e => { setRole(e.target.value as UserRole); setConfirmCode(''); setErrorMsg(null); }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900"
+                      className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl py-3 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa]"
                     >
                         <option value={UserRole.STUDENT}>Учень</option>
                         <option value={UserRole.TEACHER}>Вчитель</option>
@@ -120,19 +120,19 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                             required
                             value={grade}
                             onChange={e => setGrade(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900"
+                            className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl py-3 px-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                         />
                     )}
                     {needsCode && (
                         <div className="relative">
-                            <KeyRound className="absolute left-3 top-3.5 text-slate-400" size={18} />
+                            <KeyRound className="absolute left-3 top-3.5 text-slate-400 dark:text-[#737373]" size={18} />
                             <input 
                                 type="password"
                                 placeholder={`Код підтвердження для ролі "${role}"`}
                                 required
                                 value={confirmCode}
                                 onChange={e => { setConfirmCode(e.target.value); setErrorMsg(null); }}
-                                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 placeholder-slate-400"
+                                className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                             />
                         </div>
                     )}
@@ -141,31 +141,31 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             )}
 
             <div className="relative">
-              <Mail className="absolute left-3 top-3.5 text-slate-400" size={18} />
+              <Mail className="absolute left-3 top-3.5 text-slate-400 dark:text-[#737373]" size={18} />
               <input 
                 type="email" 
                 placeholder="Email адреса"
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900"
+                className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
               />
             </div>
 
             <div className="relative">
-              <Lock className="absolute left-3 top-3.5 text-slate-400" size={18} />
+              <Lock className="absolute left-3 top-3.5 text-slate-400 dark:text-[#737373]" size={18} />
               <input 
                 type="password" 
                 placeholder="Пароль"
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900"
+                className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
               />
             </div>
 
             {errorMsg && (
-              <div className="text-red-500 text-sm text-center font-medium bg-red-50 p-2 rounded-lg">
+              <div className="text-red-500 dark:text-red-400 text-sm text-center font-medium bg-red-50 dark:bg-red-900/30 p-2 rounded-lg">
                 {errorMsg}
               </div>
             )}
@@ -180,7 +180,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 dark:text-[#a3a3a3]">
               {isLogin ? 'Ще немає акаунту?' : 'Вже є акаунт?'}
               <button 
                 onClick={() => setIsLogin(!isLogin)}

@@ -102,7 +102,7 @@ export const AddPortfolioModal: React.FC<AddPortfolioModalProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase ml-1 block mb-1">Назва</label>
+            <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1 block mb-1">Назва</label>
             <input
               type="text"
               className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0095f6] focus:outline-none text-slate-900 dark:text-[#fafafa] placeholder-slate-400"
@@ -113,7 +113,7 @@ export const AddPortfolioModal: React.FC<AddPortfolioModalProps> = ({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase ml-1 block mb-2">Фото</label>
+            <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1 block mb-2">Фото</label>
             <label className="flex flex-col items-center justify-center w-full h-32 bg-slate-50 dark:bg-[#262626] border-2 border-dashed border-slate-200 dark:border-[#404040] rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-[#404040] transition-colors">
               {preview ? (
                 <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-xl" />

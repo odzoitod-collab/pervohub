@@ -8,13 +8,15 @@ interface NotificationsScreenProps {
   posts: Post[];
   onCommentClick: (post: Post) => void;
   onUserClick: (user: User) => void;
+  refreshTrigger?: number;
 }
 
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   currentUser,
   posts,
   onCommentClick,
-  onUserClick
+  onUserClick,
+  refreshTrigger = 0
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
       .then(setNotifications)
       .catch(() => setNotifications([]))
       .finally(() => setLoading(false));
-  }, [currentUser.id]);
+  }, [currentUser.id, refreshTrigger]);
 
   const handleNotificationClick = (n: Notification) => {
     const post = posts.find(p => p.id === n.postId);

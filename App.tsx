@@ -25,9 +25,11 @@ import {
   Menu,
   Moon,
   Sun,
-  Award
+  Award,
+  MessageCircle,
+  Heart
 } from 'lucide-react';
-import { Tab, Post, Startup, UserRole, User, Comment, LostItem, LostStatus, StartupTeamRequest, isSchoolAdmin } from './types';
+import { Tab, Post, Startup, UserRole, User, Comment, LostItem, LostStatus, StartupTeamRequest, isSchoolAdmin, isTeacher } from './types';
 import { PostCard } from './components/PostCard';
 import { StartupCard } from './components/StartupCard';
 import { LostFoundCard } from './components/LostFoundCard';
@@ -51,6 +53,9 @@ import { SkeletonPost } from './components/SkeletonPost';
 import { Toast, ToastType } from './components/Toast';
 import { ProfileBadges } from './components/ProfileBadges';
 import { AwardBadgeModal } from './components/AwardBadgeModal';
+import { ThankTeacherModal } from './components/ThankTeacherModal';
+import { TeacherThanksSection } from './components/TeacherThanksSection';
+import { ChatScreen } from './components/ChatScreen';
 import { supabase } from './services/supabase';
 import * as api from './services/api';
 import { subscribeRealtime, RealtimeTables } from './services/realtime';
@@ -83,11 +88,19 @@ const App: React.FC = () => {
   const [commentingPost, setCommentingPost] = useState<Post | null>(null);
   const commentingPostRef = useRef<Post | null>(null);
   commentingPostRef.current = commentingPost;
+  const viewedUserRef = useRef<User | null>(null);
+  viewedUserRef.current = viewedUser;
+  const startupsRef = useRef(startups);
+  startupsRef.current = startups;
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showTrustBox, setShowTrustBox] = useState(false);
   const [awardBadgeStudent, setAwardBadgeStudent] = useState<User | null>(null);
+  const [thankTeacherUser, setThankTeacherUser] = useState<User | null>(null);
+  const [teacherThanksRefreshTrigger, setTeacherThanksRefreshTrigger] = useState(0);
   const [badgeHistoryOpen, setBadgeHistoryOpen] = useState(false);
+  const [chatInitialPeer, setChatInitialPeer] = useState<User | null>(null);
   const [badgeRefreshTrigger, setBadgeRefreshTrigger] = useState(0);
+  const [notificationsRefreshTrigger, setNotificationsRefreshTrigger] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try { return localStorage.getItem('sidebarOpen') !== 'false'; } catch { return true; }
   });
@@ -203,12 +216,6 @@ const App: React.FC = () => {
     })();
   }, [currentUser?.id, startups]);
 
-  useEffect(() => {
-    if (!currentUser) return;
-    const unsubscribe = subscribeRealtime(handleRealtimeRefresh);
-    return unsubscribe;
-  }, [currentUser]);
-
   const checkSession = async () => {
     setSessionLoading(true);
     try {
@@ -259,6 +266,7 @@ const App: React.FC = () => {
       const [fetchedPosts, liked] = await Promise.all([api.fetchPosts(), api.fetchUserLikedPostIds(currentUser!.id)]);
       setPosts(fetchedPosts);
       setLikedPostIds(liked);
+      setNotificationsRefreshTrigger((t) => t + 1);
       const openPost = commentingPostRef.current;
       if (openPost && (table === 'comments' || table === 'posts')) {
         const comments = await api.fetchComments(openPost.id);
@@ -274,10 +282,58 @@ const App: React.FC = () => {
       const items = await api.fetchLostItems();
       setLostItems(items);
     };
+    const refreshProfiles = async () => {
+      const viewedId = viewedUserRef.current?.id;
+      const [me, viewed] = await Promise.all([
+        api.getCurrentUser(),
+        viewedId ? api.getProfile(viewedId) : Promise.resolve(null)
+      ]);
+      if (me) setCurrentUser(me);
+      if (viewed) setViewedUser(viewed);
+    };
+    const refreshTeamRequestCounts = async () => {
+      const startupsSnapshot = startupsRef.current;
+      const myStartupIds = startupsSnapshot.filter((s) => s.author.id === currentUser.id).map((s) => s.id);
+      if (myStartupIds.length === 0) return;
+      const counts: Record<string, number> = {};
+      await Promise.all(myStartupIds.map(async (id) => { counts[id] = await api.fetchPendingTeamRequestsCount(id); }));
+      setAuthorPendingCounts(counts);
+    };
     if (table === 'posts' || table === 'likes' || table === 'comments') refreshPosts();
     else if (table === 'startups' || table === 'startup_votes') refreshStartups();
     else if (table === 'lost_items') refreshLost();
+    else if (table === 'profiles') refreshProfiles();
+    else if (table === 'user_badges') setBadgeRefreshTrigger((t) => t + 1);
+    else if (table === 'startup_team_requests') refreshTeamRequestCounts();
   };
+
+  const handleRealtimeRefreshRef = useRef(handleRealtimeRefresh);
+  handleRealtimeRefreshRef.current = handleRealtimeRefresh;
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const unsubscribe = subscribeRealtime((table) => handleRealtimeRefreshRef.current(table));
+    return unsubscribe;
+  }, [currentUser]);
+
+  // OneSignal: після підписки зберігаємо Player ID в Supabase для пушів по user_id
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const trySyncOnesignal = async () => {
+      const OneSignal = (window as any).__OneSignal;
+      if (!OneSignal) return;
+      try {
+        const subscription = await OneSignal.User?.PushSubscription?.getId?.();
+        const id = subscription ?? OneSignal.User?.PushSubscription?.id ?? null;
+        if (id) await api.saveOnesignalId(currentUser.id, id);
+      } catch {
+        // ще не підписаний або SDK не готовий
+      }
+    };
+    trySyncOnesignal();
+    const t = setInterval(trySyncOnesignal, 3000);
+    return () => clearInterval(t);
+  }, [currentUser?.id]);
 
   // --- Helpers ---
   const handleOpenModal = (mode?: CreateMode) => {
@@ -613,7 +669,7 @@ const App: React.FC = () => {
 
   const showBackToMenu = showTrustBox || activeTab === Tab.PROFILE || activeTab === Tab.SCHEDULE || activeTab === Tab.LOST_FOUND || activeTab === Tab.ADMIN;
 
-  // Нижнє меню ховаємо, коли відкрита будь-яка модалка або повноекранний перегляд
+  // Нижнє меню ховаємо, коли відкрита модалка, повноекранний перегляд або чат
   const isAnyModalOrOverlayOpen =
     isModalOpen ||
     !!commentingPost ||
@@ -623,7 +679,9 @@ const App: React.FC = () => {
     !!joinTeamStartup ||
     !!teamRequestsStartup ||
     !!awardBadgeStudent ||
-    badgeHistoryOpen;
+    !!thankTeacherUser ||
+    badgeHistoryOpen ||
+    activeTab === Tab.CHAT;
 
   // --- Navigation Components ---
   const CreateNavItem = ({ onClick, icon: Icon, label, compact }: { onClick: () => void; icon: React.ElementType; label: string; compact?: boolean }) => (
@@ -697,9 +755,9 @@ const App: React.FC = () => {
       }
 
       return (
-        <div className="pb-24 md:pb-0 animate-fade-in">
+        <div className="pb-24 md:pb-0 animate-fade-in relative isolate">
           {/* Instagram-style profile header */}
-          <div className="mb-6">
+          <div className="mb-6 relative">
             <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10">
               {/* Avatar */}
               <div className="flex justify-center sm:justify-start flex-shrink-0">
@@ -713,6 +771,9 @@ const App: React.FC = () => {
               <div className="flex-1 text-center sm:text-left min-w-0">
                 <h2 className="text-xl font-bold text-[#262626] dark:text-[#fafafa] truncate">{userToDisplay.name}</h2>
                 <p className="text-sm text-[#8e8e8e] dark:text-[#a3a3a3] font-medium">{userToDisplay.role} • {userToDisplay.grade}</p>
+                <p className="text-xs text-[#8e8e8e] dark:text-[#a3a3a3] mt-0.5">
+                  {userPosts.length} постів · {userStartups.length} стартапів
+                </p>
                 {userToDisplay.bio && <p className="text-sm text-[#262626] dark:text-[#e5e5e5] mt-2 line-clamp-3">{userToDisplay.bio}</p>}
                 {/* Small actions row — only for own profile */}
                 {isOwnProfile && !viewedUser && (
@@ -732,33 +793,60 @@ const App: React.FC = () => {
                     </button>
                   </div>
                 )}
-                {/* Кнопка "Нагородити" — тільки для вчителя/адміна при перегляді профілю учня */}
-                {!isOwnProfile && viewedUser && currentUser && (currentUser.role === UserRole.TEACHER || isSchoolAdmin(currentUser.role)) && (
-                  <div className="mt-3">
-                    <button
-                      onClick={() => setAwardBadgeStudent(userToDisplay)}
-                      className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[#0095f6] hover:bg-[#0084e0] px-4 py-2 rounded-xl transition-colors"
-                    >
-                      <Award size={18} />
-                      Нагородити
-                    </button>
-                  </div>
+              </div>
+            </div>
+            {/* Кнопки дій для чужого профілю: Написати + Нагородити — div замість button для надійного кліку на мобільних */}
+            {!isOwnProfile && viewedUser && currentUser && (
+              <div className="relative z-10 flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setViewedUser(null);
+                    setChatInitialPeer(userToDisplay);
+                    setActiveTab(Tab.CHAT);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setViewedUser(null);
+                      setChatInitialPeer(userToDisplay);
+                      setActiveTab(Tab.CHAT);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[#0095f6] hover:bg-[#0084e0] active:bg-[#0077c9] px-4 py-2.5 min-h-11 rounded-xl transition-colors cursor-pointer touch-manipulation select-none"
+                >
+                  <MessageCircle size={18} />
+                  Написати
+                </div>
+                {(currentUser.role === UserRole.TEACHER || isSchoolAdmin(currentUser.role)) && (
+                  <button
+                    type="button"
+                    onClick={() => setAwardBadgeStudent(userToDisplay)}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#0095f6] bg-[#efefef] dark:bg-[#262626] hover:bg-[#e0e0e0] dark:hover:bg-[#404040] px-4 py-2.5 min-h-11 rounded-xl transition-colors cursor-pointer touch-manipulation"
+                  >
+                    <Award size={18} />
+                    Нагородити
+                  </button>
+                )}
+                {currentUser.role === UserRole.STUDENT && isTeacher(userToDisplay.role) && (
+                  <button
+                    type="button"
+                    onClick={() => setThankTeacherUser(userToDisplay)}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 px-4 py-2.5 min-h-11 rounded-xl transition-colors cursor-pointer touch-manipulation"
+                  >
+                    <Heart size={18} />
+                    Подяка вчителю
+                  </button>
                 )}
               </div>
-            </div>
+            )}
             {/* Відзнаки — горизонтальний скрол */}
             <ProfileBadges userId={userToDisplay.id} refreshTrigger={badgeRefreshTrigger} className="mb-6" onBadgeHistoryOpen={setBadgeHistoryOpen} />
-            {/* Stats row — Instagram style */}
-            <div className="flex justify-center sm:justify-start gap-8 sm:gap-12 mt-6 pt-6 border-t border-[#efefef] dark:border-[#262626]">
-              <div className="text-center sm:text-left">
-                <span className="block text-lg font-bold text-[#262626] dark:text-[#fafafa]">{userPosts.length}</span>
-                <span className="text-sm text-[#8e8e8e] dark:text-[#a3a3a3]">постів</span>
-              </div>
-              <div className="text-center sm:text-left">
-                <span className="block text-lg font-bold text-[#262626] dark:text-[#fafafa]">{userStartups.length}</span>
-                <span className="text-sm text-[#8e8e8e] dark:text-[#a3a3a3]">стартапів</span>
-              </div>
-            </div>
+            {/* Подяки від учнів — тільки для вчителів, NFT-стиль */}
+            {isTeacher(userToDisplay.role) && (
+              <TeacherThanksSection teacherId={userToDisplay.id} refreshTrigger={teacherThanksRefreshTrigger} className="mb-6" />
+            )}
           </div>
 
           {/* Tabs — Портфоліо first (main), then Стрічка */}
@@ -825,6 +913,10 @@ const App: React.FC = () => {
       return <SearchScreen onUserClick={handleUserClick} />;
     }
 
+    if (activeTab === Tab.CHAT) {
+      return null;
+    }
+
     if (activeTab === Tab.SERVICES) {
       const handleServicesNav = (target: 'profile' | 'lost_found' | 'trust_box' | 'schedule' | 'admin') => {
         if (target === 'profile') { setActiveTab(Tab.PROFILE); setViewedUser(null); setShowTrustBox(false); }
@@ -851,6 +943,7 @@ const App: React.FC = () => {
           posts={posts}
           onCommentClick={openCommentModal}
           onUserClick={handleUserClick}
+          refreshTrigger={notificationsRefreshTrigger}
         />
       ) : null;
     }
@@ -1009,14 +1102,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-[#262626] dark:text-[#fafafa] transition-colors">
+    <div className="min-h-screen min-h-[100dvh] bg-[#fafafa] dark:bg-[#0a0a0a] text-[#262626] dark:text-[#fafafa] transition-colors">
       
       {/* --- DESKTOP LAYOUT: центрована сітка + бокові панелі --- */}
-      <div className="w-full min-h-screen flex">
+      <div className="w-full min-h-screen min-h-[100dvh] flex">
         
         {/* Left Sidebar (Desktop) — оновлене меню */}
         <aside 
-          className={`hidden lg:flex flex-col w-52 fixed left-0 top-0 h-screen bg-white dark:bg-[#0a0a0a] z-20 transition-transform duration-300 border-r border-gray-100 dark:border-[#262626] ${
+          className={`hidden lg:flex flex-col w-64 fixed left-0 top-0 h-screen bg-white dark:bg-[#0a0a0a] z-20 transition-transform duration-300 border-r border-gray-100 dark:border-[#262626] ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -1053,6 +1146,13 @@ const App: React.FC = () => {
                  aria-label={isDark ? 'Світла тема' : 'Темна тема'}
                >
                  {isDark ? <Sun size={18} /> : <Moon size={18} />}
+               </button>
+               <button 
+                 onClick={() => { setActiveTab(Tab.CHAT); setViewedUser(null); setChatInitialPeer(null); }}
+                 className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors"
+                 aria-label="Чат"
+               >
+                 <MessageCircle size={18} />
                </button>
                <button 
                  onClick={() => { setActiveTab(Tab.SEARCH); setViewedUser(null); }}
@@ -1093,10 +1193,19 @@ const App: React.FC = () => {
         )}
 
         {/* Центр: обгортка для центрування контенту на ПК */}
-        <div className={`flex-1 flex justify-center min-w-0 transition-[margin] duration-300 ${sidebarOpen ? 'lg:ml-52' : 'lg:ml-2'} xl:mr-72`}>
-        <main className="w-full max-w-[600px] pt-2 lg:pt-8 px-4 md:px-6 pb-24 lg:pb-8">
+        <div className={`flex-1 flex flex-col min-w-0 transition-[margin] duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-2'} xl:mr-72 xl:pr-2`}>
+        {activeTab === Tab.CHAT && currentUser ? (
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden w-full max-w-[600px] mx-auto lg:pt-0 animate-fade-in h-[100dvh] lg:h-full max-h-[100dvh] lg:max-h-none">
+            <ChatScreen
+              currentUser={currentUser}
+              initialPeer={chatInitialPeer}
+              onBack={() => { setActiveTab(Tab.HOME); setChatInitialPeer(null); setViewedUser(null); }}
+            />
+          </div>
+        ) : (
+        <main className="w-full max-w-[600px] pt-2 lg:pt-8 px-4 md:px-6 pb-24 lg:pb-8 flex-1">
           {/* Mobile Header — кнопка «Назад» зліва, touch targets 44x44 */}
-          <header className="lg:hidden flex justify-between items-center py-2 px-0 mb-2 sticky top-0 z-20 bg-[#fafafa]/90 dark:bg-[#0a0a0a]/90 backdrop-blur-xl safe-area-pt">
+          <header className="lg:hidden sticky-header flex justify-between items-center py-2 px-0 mb-2 sticky top-0 z-20 bg-[#fafafa]/90 dark:bg-[#0a0a0a]/90 backdrop-blur-xl safe-area-pt">
              {viewedUser ? (
                <button 
                  onClick={() => setViewedUser(null)}
@@ -1121,13 +1230,20 @@ const App: React.FC = () => {
                  <h1 className="text-xl font-bold text-[#262626] dark:text-[#fafafa]">Pervoz<span className="text-[#0095f6]">Hub</span></h1>
                </div>
              )}
-             <div className="flex items-center gap-3">
+             <div className="flex items-center gap-2">
                <button
                  onClick={() => setIsDark(!isDark)}
                  className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-colors touch-manipulation"
                  aria-label={isDark ? 'Світла тема' : 'Темна тема'}
                >
                  {isDark ? <Sun size={22} /> : <Moon size={22} />}
+               </button>
+               <button 
+                 onClick={() => { setActiveTab(Tab.CHAT); setViewedUser(null); setChatInitialPeer(null); }}
+                 className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-colors touch-manipulation"
+                 aria-label="Чат"
+               >
+                 <MessageCircle size={22} />
                </button>
                <button 
                  onClick={() => { setActiveTab(Tab.SEARCH); setViewedUser(null); }}
@@ -1141,26 +1257,32 @@ const App: React.FC = () => {
 
           {renderContent()}
         </main>
+        )}
         </div>
 
-        {/* Right Sidebar (Desktop) */}
-        <aside className="hidden xl:block w-72 fixed right-0 top-0 h-screen py-6 px-4 overflow-y-auto no-scrollbar bg-white dark:bg-[#0a0a0a] z-20 border-l border-gray-100 dark:border-[#262626]">
+        {/* Right Sidebar (Desktop): відступ від постів + топ ідей з БД */}
+        <aside className="hidden xl:block w-72 fixed right-0 top-0 h-screen py-6 pl-5 pr-4 overflow-y-auto no-scrollbar bg-white dark:bg-[#0a0a0a] z-20 border-l border-[#e5e5e5] dark:border-[#262626]">
             <div className="max-w-[260px] mx-auto">
             <CountdownWidget />
-            <div className="bg-gray-50 dark:bg-[#171717] rounded-2xl p-4 mt-6">
-            <h3 className="font-semibold text-[#262626] dark:text-[#fafafa] mb-4 text-sm uppercase tracking-wide">Топ ідей</h3>
-            <div className="space-y-4">
-              {[...startups].sort((a, b) => b.currentSupport - a.currentSupport).slice(0, 3).map((s, i) => (
-                <div key={s.id} className="flex items-center gap-3 cursor-pointer hover:bg-slate-200/50 dark:hover:bg-[#262626] p-2 -mx-2 rounded-lg transition-colors" onClick={() => setActiveTab(Tab.STARTUPS)}>
-                  <div className="font-black text-indigo-600 dark:text-indigo-400 text-lg w-4">{i + 1}</div>
+            <div className="h-4 shrink-0" aria-hidden="true" />
+            <div className="bg-[#f8f8f8] dark:bg-[#171717] rounded-2xl p-4 border border-[#eee] dark:border-[#262626]">
+            <h3 className="font-semibold text-[#262626] dark:text-[#fafafa] mb-3 text-sm uppercase tracking-wide flex items-center gap-2">
+              <Lightbulb size={16} className="text-amber-500 dark:text-amber-400" />
+              Топ ідей
+            </h3>
+            <p className="text-[11px] text-[#737373] dark:text-[#a3a3a3] mb-3">За кількістю голосів з бази</p>
+            <div className="space-y-3">
+              {[...startups].sort((a, b) => (b.currentSupport ?? 0) - (a.currentSupport ?? 0)).slice(0, 5).map((s, i) => (
+                <div key={s.id} className="flex items-center gap-3 cursor-pointer hover:bg-white/80 dark:hover:bg-[#262626] p-2.5 -mx-1 rounded-xl transition-colors border border-transparent hover:border-[#e5e5e5] dark:hover:border-[#333]" onClick={() => setActiveTab(Tab.STARTUPS)}>
+                  <div className="font-black text-indigo-600 dark:text-indigo-400 text-base w-5 flex-shrink-0">{i + 1}</div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-800 dark:text-[#fafafa] truncate">{s.title}</p>
-                    <p className="text-xs text-slate-500 dark:text-[#a3a3a3] font-medium">{s.currentSupport} голосів</p>
+                    <p className="text-sm font-bold text-[#262626] dark:text-[#fafafa] truncate">{s.title}</p>
+                    <p className="text-xs text-[#737373] dark:text-[#a3a3a3] font-medium">{s.currentSupport ?? 0} голосів</p>
                   </div>
                 </div>
               ))}
               {startups.length === 0 && (
-                <p className="text-xs text-slate-400 dark:text-[#a3a3a3] py-2">Поки немає ідей</p>
+                <p className="text-xs text-[#737373] dark:text-[#a3a3a3] py-3 text-center">Поки немає ідей</p>
               )}
             </div>
           </div>
@@ -1179,9 +1301,9 @@ const App: React.FC = () => {
         </aside>
       </div>
 
-      {/* --- MOBILE BOTTOM NAV: ховається при модалках/повноекрані, компактний --- */}
+      {/* --- MOBILE BOTTOM NAV: фіксовано внизу, однакова висота на всіх пристроях --- */}
       {!isAnyModalOrOverlayOpen && (
-        <nav className="lg:hidden mobile-nav-fixed fixed bottom-0 left-0 right-0 w-full bg-[#fafafa]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl px-2 py-2 flex justify-around items-center gap-1 z-[100] safe-area-pb">
+        <nav className="lg:hidden mobile-nav-fixed w-full bg-[#fafafa]/98 dark:bg-[#0a0a0a]/98 backdrop-blur-xl border-t border-[#efefef] dark:border-[#262626] px-2 flex justify-around items-center gap-1 min-h-[56px] py-2 safe-area-pb">
           <NavItem tab={Tab.HOME} icon={Home} label="Головна" compact />
           <NavItem tab={Tab.STARTUPS} icon={Lightbulb} label="Ідеї" compact />
           <CreateNavItem onClick={handleOpenModal} icon={PlusCircle} label="Створити" compact />
@@ -1254,10 +1376,10 @@ const App: React.FC = () => {
               {createMode === 'startup' && (
                 <div className="space-y-3 mb-3 animate-slide-up">
                   <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Назва стартапу</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1">Назва стартапу</label>
                     <input 
                       type="text"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900 placeholder-slate-400"
+                      className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                       placeholder="Наприклад: Еко-Кафетерій"
                       value={startupTitle}
                       onChange={(e) => setStartupTitle(e.target.value)}
@@ -1265,24 +1387,24 @@ const App: React.FC = () => {
                   </div>
                   <div className="flex gap-3">
                     <div className="flex-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase ml-1 flex items-center gap-1">
+                      <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1 flex items-center gap-1">
                         <Target size={12} /> Ціль (голосів)
                       </label>
                       <input 
                         type="number"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900"
+                        className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                         placeholder="100"
                         value={startupGoal}
                         onChange={(e) => setStartupGoal(e.target.value)}
                       />
                     </div>
                     <div className="flex-[2]">
-                       <label className="text-xs font-bold text-slate-500 uppercase ml-1 flex items-center gap-1">
+                       <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1 flex items-center gap-1">
                         <Tag size={12} /> Теги
                       </label>
                       <input 
                         type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900"
+                        className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                         placeholder="Екологія, IT, Спорт..."
                         value={startupTags}
                         onChange={(e) => setStartupTags(e.target.value)}
@@ -1298,22 +1420,22 @@ const App: React.FC = () => {
                    <div className="flex gap-2">
                        <button 
                          onClick={() => setLostStatus('lost')}
-                         className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all ${lostStatus === 'lost' ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-slate-100 text-slate-400 hover:border-rose-100'}`}
+                         className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all ${lostStatus === 'lost' ? 'border-rose-500 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300' : 'border-slate-100 dark:border-[#404040] text-slate-400 dark:text-[#737373] hover:border-rose-100 dark:hover:border-rose-900/50'}`}
                        >
                          <AlertCircle size={18} /> ЗАГУБИВ
                        </button>
                        <button 
                          onClick={() => setLostStatus('found')}
-                         className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all ${lostStatus === 'found' ? 'border-emerald-500 bg-emerald-50 text-emerald-600' : 'border-slate-100 text-slate-400 hover:border-emerald-100'}`}
+                         className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm flex items-center justify-center gap-2 transition-all ${lostStatus === 'found' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300' : 'border-slate-100 dark:border-[#404040] text-slate-400 dark:text-[#737373] hover:border-emerald-100 dark:hover:border-emerald-900/50'}`}
                        >
                          <CheckCircle2 size={18} /> ЗНАЙШОВ
                        </button>
                    </div>
                    <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Що саме?</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1">Що саме?</label>
                     <input 
                       type="text"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900 placeholder-slate-400"
+                      className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373]"
                       placeholder={lostStatus === 'lost' ? "Наприклад: Чорний рюкзак Nike" : "Наприклад: Зв'язка ключів"}
                       value={lostTitle}
                       onChange={(e) => setLostTitle(e.target.value)}
@@ -1324,11 +1446,11 @@ const App: React.FC = () => {
 
               {/* COMMON TEXT AREA */}
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase ml-1 mb-1 block">
+                <label className="text-xs font-bold text-slate-500 dark:text-[#a3a3a3] uppercase ml-1 mb-1 block">
                   {createMode === 'startup' ? 'Опис ідеї' : createMode === 'lost_found' ? 'Деталі (де, коли)' : 'Текст'}
                 </label>
                 <textarea 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm min-h-[120px] focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none text-slate-800 placeholder-slate-400 font-medium"
+                  className="w-full bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#404040] rounded-xl p-4 text-sm min-h-[120px] focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none text-slate-800 dark:text-[#fafafa] placeholder-slate-400 dark:placeholder-[#737373] font-medium"
                   placeholder={createMode === 'startup' ? "Опиши свою ідею детально..." : createMode === 'lost_found' ? "Де залишили, особливі прикмети..." : "Про що думаєш?"}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -1339,14 +1461,14 @@ const App: React.FC = () => {
               {(createMode === 'post' || createMode === 'lost_found') && (
                 <div className="mt-3">
                    <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                     <label className="flex flex-col items-center justify-center w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 flex-shrink-0">
-                       <ImageIcon size={20} className="text-slate-400 mb-1" />
-                       <span className="text-[10px] text-slate-500 font-bold">Додати</span>
+                     <label className="flex flex-col items-center justify-center w-20 h-20 bg-slate-50 dark:bg-[#262626] border-2 border-dashed border-slate-200 dark:border-[#404040] rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-[#333] flex-shrink-0">
+                       <ImageIcon size={20} className="text-slate-400 dark:text-[#737373] mb-1" />
+                       <span className="text-[10px] text-slate-500 dark:text-[#a3a3a3] font-bold">Додати</span>
                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
                      </label>
                      
                      {previewImages.map((img, idx) => (
-                       <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 group border border-slate-100">
+                       <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 group border border-slate-100 dark:border-[#404040]">
                          <img src={img} className="w-full h-full object-cover" />
                          <button 
                            onClick={() => removeImage(idx)}
@@ -1404,6 +1526,19 @@ const App: React.FC = () => {
           onSuccess={() => {
             setBadgeRefreshTrigger((t) => t + 1);
             showToast('success', 'Відзнаку видано');
+          }}
+          onError={(msg) => showToast('error', msg)}
+        />
+      )}
+
+      {thankTeacherUser && currentUser && (
+        <ThankTeacherModal
+          teacher={thankTeacherUser}
+          currentUser={currentUser}
+          onClose={() => setThankTeacherUser(null)}
+          onSuccess={() => {
+            setTeacherThanksRefreshTrigger((t) => t + 1);
+            showToast('success', 'Подяку надіслано');
           }}
           onError={(msg) => showToast('error', msg)}
         />

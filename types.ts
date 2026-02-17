@@ -18,6 +18,18 @@ export function isSchoolAdmin(role: string): boolean {
   return role === UserRole.SCHOOL_ADMIN || role === 'Директор' || role === 'Адмін' || role === 'Адміністратор';
 }
 
+export function isTeacher(role: string): boolean {
+  return role === UserRole.TEACHER || isSchoolAdmin(role);
+}
+
+/** Подяка вчителю від учня (тільки для вчителів) */
+export interface TeacherThank {
+  id: string;
+  from_user: User;
+  message: string | null;
+  created_at: string;
+}
+
 export type StartupStatus = 'pending' | 'accepted' | 'rejected';
 
 export interface User {
@@ -101,7 +113,25 @@ export enum Tab {
   NOTIFICATIONS = 'notifications',
   SERVICES = 'services',
   SCHEDULE = 'schedule',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
+  CHAT = 'chat'
+}
+
+/** Один дірект-чат (розмова між двома користувачами) */
+export interface DMConversation {
+  id: string;
+  peer: User;
+  lastMessage?: { content: string; created_at: string; isFromMe: boolean };
+  updated_at: string;
+}
+
+/** Одне повідомлення в діректі */
+export interface DMMessage {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  isFromMe: boolean;
 }
 
 export type NotificationType = 'like' | 'comment';

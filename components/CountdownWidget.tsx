@@ -48,27 +48,27 @@ export const CountdownWidget: React.FC = () => {
   if (loading || !event || isPast) return null;
 
   return (
-    <div className="bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 rounded-2xl p-4 text-white shadow-lg">
-      <div className="flex items-center gap-2 mb-3">
-        <Bell size={18} />
-        <span className="font-bold text-sm">{event.title}</span>
+    <div className="bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 rounded-xl p-3 sm:p-4 text-white shadow-lg">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Bell size={16} className="flex-shrink-0 sm:w-[18px] sm:h-[18px]" />
+        <span className="font-bold text-xs sm:text-sm truncate">{event.title}</span>
       </div>
       {diff && (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1.5 sm:gap-2 flex-wrap">
           {[
             { v: diff.d, l: 'д' },
             { v: diff.h, l: 'год' },
             { v: diff.m, l: 'хв' },
             { v: diff.s, l: 'сек' }
           ].map(({ v, l }) => (
-            <div key={l} className="bg-white/20 backdrop-blur rounded-lg px-2 py-1.5 text-center min-w-[44px]">
-              <div className="text-lg font-black leading-tight">{v}</div>
-              <div className="text-[10px] font-semibold opacity-90">{l}</div>
+            <div key={l} className="bg-white/20 backdrop-blur rounded-lg px-2 py-1 text-center min-w-[40px] sm:min-w-[44px]">
+              <div className="text-base sm:text-lg font-black leading-tight">{v}</div>
+              <div className="text-[9px] sm:text-[10px] font-semibold opacity-90">{l}</div>
             </div>
           ))}
         </div>
       )}
-      <p className="text-white/90 text-xs mt-2">
+      <p className="text-white/90 text-[10px] sm:text-xs mt-1.5 line-clamp-1">
         {new Date(event.event_date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}
         {event.event_time && ` о ${event.event_time}`}
       </p>
