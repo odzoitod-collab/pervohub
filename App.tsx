@@ -49,7 +49,6 @@ import { NotificationsScreen } from './components/NotificationsScreen';
 import { CountdownWidget } from './components/CountdownWidget';
 import { SkeletonPost } from './components/SkeletonPost';
 import { Toast, ToastType } from './components/Toast';
-import { InstallPrompt } from './components/InstallPrompt';
 import { ProfileBadges } from './components/ProfileBadges';
 import { AwardBadgeModal } from './components/AwardBadgeModal';
 import { supabase } from './services/supabase';
@@ -1004,12 +1003,7 @@ const App: React.FC = () => {
 
   // --- RENDER AUTH SCREEN IF NOT LOGGED IN ---
   if (!currentUser) {
-    return (
-      <>
-        <AuthScreen onLogin={checkSession} />
-        <InstallPrompt />
-      </>
-    );
+    return <AuthScreen onLogin={checkSession} />;
   }
 
   return (
@@ -1454,8 +1448,6 @@ const App: React.FC = () => {
           onClose={() => setToast(null)}
         />
       )}
-
-      <InstallPrompt />
 
       {/* CSS for custom animations */}
       <style>{`
