@@ -98,6 +98,7 @@ const App: React.FC = () => {
   const [thankTeacherUser, setThankTeacherUser] = useState<User | null>(null);
   const [teacherThanksRefreshTrigger, setTeacherThanksRefreshTrigger] = useState(0);
   const [badgeHistoryOpen, setBadgeHistoryOpen] = useState(false);
+  const [viewThanksModalOpen, setViewThanksModalOpen] = useState(false);
   const [chatInitialPeer, setChatInitialPeer] = useState<User | null>(null);
   const [badgeRefreshTrigger, setBadgeRefreshTrigger] = useState(0);
   const [notificationsRefreshTrigger, setNotificationsRefreshTrigger] = useState(0);
@@ -681,6 +682,7 @@ const App: React.FC = () => {
     !!awardBadgeStudent ||
     !!thankTeacherUser ||
     badgeHistoryOpen ||
+    viewThanksModalOpen ||
     activeTab === Tab.CHAT;
 
   // --- Navigation Components ---
@@ -845,7 +847,7 @@ const App: React.FC = () => {
             <ProfileBadges userId={userToDisplay.id} refreshTrigger={badgeRefreshTrigger} className="mb-6" onBadgeHistoryOpen={setBadgeHistoryOpen} />
             {/* Подяки від учнів — тільки для вчителів, NFT-стиль */}
             {isTeacher(userToDisplay.role) && (
-              <TeacherThanksSection teacherId={userToDisplay.id} refreshTrigger={teacherThanksRefreshTrigger} className="mb-6" />
+              <TeacherThanksSection teacherId={userToDisplay.id} refreshTrigger={teacherThanksRefreshTrigger} onViewModalChange={setViewThanksModalOpen} className="mb-6" />
             )}
           </div>
 
@@ -1303,7 +1305,7 @@ const App: React.FC = () => {
 
       {/* --- MOBILE BOTTOM NAV: фіксовано внизу, однакова висота на всіх пристроях --- */}
       {!isAnyModalOrOverlayOpen && (
-        <nav className="lg:hidden mobile-nav-fixed w-full bg-[#fafafa]/98 dark:bg-[#0a0a0a]/98 backdrop-blur-xl border-t border-[#efefef] dark:border-[#262626] px-2 flex justify-around items-center gap-1 min-h-[56px] py-2 safe-area-pb">
+        <nav className="lg:hidden mobile-nav-fixed w-full bg-[#fafafa]/75 dark:bg-[#0a0a0a]/75 backdrop-blur-xl border-t border-[#efefef]/80 dark:border-[#262626]/80 px-2 flex justify-around items-center gap-1 min-h-[56px] py-2 safe-area-pb">
           <NavItem tab={Tab.HOME} icon={Home} label="Головна" compact />
           <NavItem tab={Tab.STARTUPS} icon={Lightbulb} label="Ідеї" compact />
           <CreateNavItem onClick={handleOpenModal} icon={PlusCircle} label="Створити" compact />

@@ -17,6 +17,7 @@ body {
   overflow-x: hidden;
   position: relative;
   -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
 }
 
 /* Фіксована висота нижнього меню — не піднімається/не опускається на різних пристроях */
