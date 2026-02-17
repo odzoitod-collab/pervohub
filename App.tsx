@@ -24,7 +24,8 @@ import {
   Bell,
   Menu,
   Moon,
-  Sun
+  Sun,
+  Award
 } from 'lucide-react';
 import { Tab, Post, Startup, UserRole, User, Comment, LostItem, LostStatus, StartupTeamRequest, isSchoolAdmin } from './types';
 import { PostCard } from './components/PostCard';
@@ -48,6 +49,8 @@ import { NotificationsScreen } from './components/NotificationsScreen';
 import { CountdownWidget } from './components/CountdownWidget';
 import { SkeletonPost } from './components/SkeletonPost';
 import { Toast, ToastType } from './components/Toast';
+import { ProfileBadges } from './components/ProfileBadges';
+import { AwardBadgeModal } from './components/AwardBadgeModal';
 import { supabase } from './services/supabase';
 import * as api from './services/api';
 import { subscribeRealtime, RealtimeTables } from './services/realtime';
@@ -70,7 +73,7 @@ const App: React.FC = () => {
 
   // --- View States ---
   const [viewedUser, setViewedUser] = useState<User | null>(null);
-  const [profileTab, setProfileTab] = useState<'feed' | 'portfolio'>('feed');
+  const [profileTab, setProfileTab] = useState<'feed' | 'portfolio'>('portfolio');
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [joinTeamStartup, setJoinTeamStartup] = useState<Startup | null>(null);
   const [teamRequestsStartup, setTeamRequestsStartup] = useState<Startup | null>(null);
@@ -82,6 +85,8 @@ const App: React.FC = () => {
   commentingPostRef.current = commentingPost;
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showTrustBox, setShowTrustBox] = useState(false);
+  const [awardBadgeStudent, setAwardBadgeStudent] = useState<User | null>(null);
+  const [badgeRefreshTrigger, setBadgeRefreshTrigger] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try { return localStorage.getItem('sidebarOpen') !== 'false'; } catch { return true; }
   });
@@ -594,7 +599,7 @@ const App: React.FC = () => {
   // --- Interaction Handlers ---
   const handleUserClick = (user: User) => {
     setViewedUser(user);
-    setProfileTab('feed');
+    setProfileTab('portfolio');
     setCommentingPost(null);
     window.scrollTo(0, 0);
   };
@@ -607,30 +612,45 @@ const App: React.FC = () => {
 
   const showBackToMenu = showTrustBox || activeTab === Tab.PROFILE || activeTab === Tab.SCHEDULE || activeTab === Tab.LOST_FOUND || activeTab === Tab.ADMIN;
 
+  // Нижнє меню ховаємо, коли відкрита будь-яка модалка або повноекранний перегляд
+  const isAnyModalOrOverlayOpen =
+    isModalOpen ||
+    !!commentingPost ||
+    isEditingProfile ||
+    !!viewedImage ||
+    showMoodModal ||
+    !!joinTeamStartup ||
+    !!teamRequestsStartup ||
+    !!awardBadgeStudent;
+
   // --- Navigation Components ---
-  const CreateNavItem = ({ onClick, icon: Icon, label }: { onClick: () => void; icon: React.ElementType; label: string }) => (
+  const CreateNavItem = ({ onClick, icon: Icon, label, compact }: { onClick: () => void; icon: React.ElementType; label: string; compact?: boolean }) => (
     <button 
       onClick={onClick}
-      className="flex flex-col md:flex-row items-center md:gap-3 p-2 md:px-4 md:py-3 rounded-xl transition-all text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa] md:hover:bg-[#f5f5f5] dark:md:hover:bg-[#262626]"
+      className={`flex flex-col md:flex-row items-center justify-center md:gap-3 rounded-xl transition-all text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 touch-manipulation w-full md:w-auto ${
+        compact ? 'min-h-10 p-2' : 'min-h-11 p-3 md:px-4'
+      }`}
     >
-      <Icon size={22} strokeWidth={2} />
-      <span className="text-[10px] md:text-sm font-medium mt-1 md:mt-0">{label}</span>
+      <Icon size={compact ? 20 : 22} strokeWidth={2} />
+      <span className={`font-semibold mt-0.5 md:mt-0 ${compact ? 'text-[9px]' : 'text-[10px] md:text-sm'}`}>{label}</span>
     </button>
   );
 
-  const NavItem = ({ tab, icon: Icon, label }: { tab: Tab; icon: React.ElementType; label: string }) => {
+  const NavItem = ({ tab, icon: Icon, label, compact }: { tab: Tab; icon: React.ElementType; label: string; compact?: boolean }) => {
     const isActive = activeTab === tab && !viewedUser;
     return (
       <button 
         onClick={() => { setActiveTab(tab); setViewedUser(null); }}
-        className={`flex flex-col md:flex-row items-center md:gap-3 p-2 md:px-4 md:py-3 rounded-xl transition-all ${
+        className={`flex flex-col md:flex-row items-center justify-center md:gap-3 rounded-xl transition-all w-full md:w-auto active:scale-95 touch-manipulation ${
+          compact ? 'min-h-10 p-2' : 'min-h-11 p-3 md:px-4'
+        } ${
           isActive 
-            ? 'text-[#0095f6] md:bg-[#efefef] dark:md:bg-[#262626]' 
-            : 'text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa] md:hover:bg-[#f5f5f5] dark:md:hover:bg-[#262626]'
+            ? 'text-[#0095f6] bg-[#efefef] dark:bg-[#262626]' 
+            : 'text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626]'
         }`}
       >
-        <Icon size={isActive ? 24 : 22} className={isActive ? "fill-current md:fill-none" : ""} strokeWidth={isActive ? 2.5 : 2} />
-        <span className={`text-[10px] md:text-sm font-medium mt-1 md:mt-0 ${isActive ? 'md:font-bold' : ''}`}>
+        <Icon size={compact ? (isActive ? 22 : 20) : (isActive ? 24 : 22)} className={isActive ? "fill-current md:fill-none" : ""} strokeWidth={isActive ? 2.5 : 2} />
+        <span className={`font-semibold mt-0.5 md:mt-0 ${compact ? 'text-[9px]' : 'text-[10px] md:text-sm'} ${isActive ? 'font-bold' : ''}`}>
           {label}
         </span>
       </button>
@@ -642,7 +662,7 @@ const App: React.FC = () => {
     if (dataLoading && !viewedUser && activeTab !== Tab.CREATE && activeTab !== Tab.SEARCH && activeTab !== Tab.NOTIFICATIONS && activeTab !== Tab.SERVICES && activeTab !== Tab.SCHEDULE && activeTab !== Tab.ADMIN) {
         if (activeTab === Tab.HOME || activeTab === Tab.PROFILE) {
           return (
-            <div className="-mx-4 md:mx-0 space-y-0 md:space-y-4 pb-24 md:pb-0">
+            <div className="space-y-3 md:space-y-4 pb-24 md:pb-0">
               {[1, 2, 3].map((i) => <SkeletonPost key={i} />)}
             </div>
           );
@@ -676,75 +696,90 @@ const App: React.FC = () => {
 
       return (
         <div className="pb-24 md:pb-0 animate-fade-in">
-          <div className="bg-white dark:bg-[#171717] rounded-2xl p-6 border border-[#efefef] dark:border-[#404040] text-center mb-6">
-            <div className="relative inline-block mb-4">
-              <img src={userToDisplay.avatar} alt="Profile" className="w-24 h-24 rounded-full mx-auto border-4 border-slate-50 dark:border-[#262626] object-cover" />
-              <div className="absolute bottom-0 right-0 bg-[#0095f6] text-white rounded-full p-1.5 border-2 border-white dark:border-[#171717]">
-                <School size={14} />
+          {/* Instagram-style profile header */}
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-10">
+              {/* Avatar */}
+              <div className="flex justify-center sm:justify-start flex-shrink-0">
+                <div className="relative">
+                  <img src={userToDisplay.avatar} alt="" className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover ring-2 ring-[#efefef] dark:ring-[#262626]" />
+                  <div className="absolute -bottom-0.5 -right-0.5 bg-[#0095f6] text-white rounded-full p-1.5 ring-2 ring-white dark:ring-[#171717]">
+                    <School size={14} />
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 text-center sm:text-left min-w-0">
+                <h2 className="text-xl font-bold text-[#262626] dark:text-[#fafafa] truncate">{userToDisplay.name}</h2>
+                <p className="text-sm text-[#8e8e8e] dark:text-[#a3a3a3] font-medium">{userToDisplay.role} • {userToDisplay.grade}</p>
+                {userToDisplay.bio && <p className="text-sm text-[#262626] dark:text-[#e5e5e5] mt-2 line-clamp-3">{userToDisplay.bio}</p>}
+                {/* Small actions row — only for own profile */}
+                {isOwnProfile && !viewedUser && (
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3">
+                    <button
+                      onClick={() => setIsEditingProfile(true)}
+                      className="text-xs font-semibold text-[#0095f6] hover:underline"
+                    >
+                      Редагувати профіль
+                    </button>
+                    <span className="text-[#dbdbdb] dark:text-[#404040]">·</span>
+                    <button
+                      onClick={handleLogout}
+                      className="text-xs font-semibold text-[#ed4956] hover:underline"
+                    >
+                      Вийти
+                    </button>
+                  </div>
+                )}
+                {/* Кнопка "Нагородити" — тільки для вчителя/адміна при перегляді профілю учня */}
+                {!isOwnProfile && viewedUser && currentUser && (currentUser.role === UserRole.TEACHER || isSchoolAdmin(currentUser.role)) && (
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setAwardBadgeStudent(userToDisplay)}
+                      className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[#0095f6] hover:bg-[#0084e0] px-4 py-2 rounded-xl transition-colors"
+                    >
+                      <Award size={18} />
+                      Нагородити
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-            <h2 className="text-xl font-bold text-[#262626] dark:text-[#fafafa]">{userToDisplay.name}</h2>
-            <p className="text-[#8e8e8e] dark:text-[#a3a3a3] mb-2 font-medium">{userToDisplay.role} • {userToDisplay.grade}</p>
-            {userToDisplay.bio && <p className="text-sm text-slate-600 dark:text-[#a3a3a3] mb-4 max-w-sm mx-auto">{userToDisplay.bio}</p>}
-            
-            <div className="flex justify-center gap-8 mb-6 border-t border-b border-slate-50 dark:border-[#404040] py-4">
-               <div className="text-center">
-                 <div className="text-xl font-bold text-[#262626] dark:text-[#fafafa]">{userPosts.length}</div>
-                 <div className="text-xs font-medium text-[#8e8e8e] dark:text-[#a3a3a3] uppercase tracking-wide">Постів</div>
-               </div>
-               <div className="text-center">
-                 <div className="text-xl font-bold text-[#262626] dark:text-[#fafafa]">{userStartups.length}</div>
-                 <div className="text-xs font-medium text-[#8e8e8e] dark:text-[#a3a3a3] uppercase tracking-wide">Стартапів</div>
-               </div>
+            {/* Відзнаки — горизонтальний скрол */}
+            <ProfileBadges userId={userToDisplay.id} refreshTrigger={badgeRefreshTrigger} className="mb-6" />
+            {/* Stats row — Instagram style */}
+            <div className="flex justify-center sm:justify-start gap-8 sm:gap-12 mt-6 pt-6 border-t border-[#efefef] dark:border-[#262626]">
+              <div className="text-center sm:text-left">
+                <span className="block text-lg font-bold text-[#262626] dark:text-[#fafafa]">{userPosts.length}</span>
+                <span className="text-sm text-[#8e8e8e] dark:text-[#a3a3a3]">постів</span>
+              </div>
+              <div className="text-center sm:text-left">
+                <span className="block text-lg font-bold text-[#262626] dark:text-[#fafafa]">{userStartups.length}</span>
+                <span className="text-sm text-[#8e8e8e] dark:text-[#a3a3a3]">стартапів</span>
+              </div>
             </div>
-            
-            {isOwnProfile && !viewedUser && (
-                <>
-                <button 
-                  onClick={() => setShowTrustBox(true)}
-                  className="w-full mb-4 py-4 px-6 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-700 rounded-2xl flex items-center justify-center gap-3 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
-                >
-                  <ShieldCheck size={24} />
-                  Скарбничка довіри
-                </button>
-                <div className="flex gap-2">
-                    <button 
-                      onClick={() => setIsEditingProfile(true)}
-                      className="flex-1 flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-[#a3a3a3] hover:text-indigo-600 dark:hover:text-indigo-400 py-3 px-4 hover:bg-slate-100 dark:hover:bg-[#262626] rounded-xl transition-colors font-medium"
-                    >
-                      <Settings size={16} /> Редагувати профіль
-                    </button>
-                    <button 
-                      onClick={handleLogout}
-                      className="flex-1 flex items-center justify-center gap-2 text-sm text-rose-600 hover:text-rose-700 py-3 px-4 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors font-medium"
-                    >
-                      <LogOut size={16} /> Вийти
-                    </button>
-                </div>
-                </>
-            )}
           </div>
 
-          <div className="flex gap-2 mb-4 border-b border-[#efefef] dark:border-[#404040]">
-            <button
-              onClick={() => setProfileTab('feed')}
-              className={`pb-3 px-4 font-bold text-sm transition-colors border-b-2 -mb-px ${
-                profileTab === 'feed'
-                  ? 'border-[#0095f6] text-[#0095f6]'
-                  : 'border-transparent text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa]'
-              }`}
-            >
-              Стрічка
-            </button>
+          {/* Tabs — Портфоліо first (main), then Стрічка */}
+          <div className="flex border-b border-[#efefef] dark:border-[#262626] mb-4">
             <button
               onClick={() => setProfileTab('portfolio')}
-              className={`pb-3 px-4 font-bold text-sm transition-colors border-b-2 -mb-px ${
+              className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 profileTab === 'portfolio'
-                  ? 'border-[#0095f6] text-[#0095f6]'
+                  ? 'border-[#262626] dark:border-[#fafafa] text-[#262626] dark:text-[#fafafa]'
                   : 'border-transparent text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa]'
               }`}
             >
               Портфоліо
+            </button>
+            <button
+              onClick={() => setProfileTab('feed')}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                profileTab === 'feed'
+                  ? 'border-[#262626] dark:border-[#fafafa] text-[#262626] dark:text-[#fafafa]'
+                  : 'border-transparent text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#262626] dark:hover:text-[#fafafa]'
+              }`}
+            >
+              Стрічка
             </button>
           </div>
 
@@ -773,7 +808,7 @@ const App: React.FC = () => {
                     />
                  ))
              ) : (
-                 <div className="text-center py-10 text-slate-400 dark:text-[#a3a3a3] bg-white dark:bg-[#171717] rounded-2xl border border-slate-100 dark:border-[#404040] border-dashed">
+                 <div className="text-center py-10 text-[#737373] dark:text-[#a3a3a3] bg-[#f5f5f5] dark:bg-[#262626] rounded-2xl">
                      <p>Немає публікацій</p>
                  </div>
              )}
@@ -821,7 +856,7 @@ const App: React.FC = () => {
     switch (activeTab) {
       case Tab.HOME:
         return (
-          <div className="-mx-2 sm:-mx-4 md:mx-0 space-y-0 md:space-y-4 lg:space-y-5 pb-24 md:pb-0">
+          <div className="space-y-3 md:space-y-4 pb-24 md:pb-0">
             {posts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <span className="text-6xl mb-4">📝</span>
@@ -848,8 +883,8 @@ const App: React.FC = () => {
         );
       case Tab.STARTUPS:
         return (
-          <div className="space-y-4 lg:space-y-5 pb-24 md:pb-0">
-             <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] rounded-2xl p-6 text-white mb-6 relative overflow-hidden">
+          <div className="space-y-4 pb-24 md:pb-0">
+             <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] rounded-2xl p-6 text-white mb-6 relative overflow-hidden shadow-lg shadow-[#0095f6]/20">
                <div className="relative z-10">
                  <h2 className="text-xl font-bold mb-2">Є ідея?</h2>
                  <p className="text-indigo-100 text-sm mb-4 max-w-sm font-medium">
@@ -868,7 +903,7 @@ const App: React.FC = () => {
                </div>
              </div>
              {startups.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-[#171717] rounded-2xl border border-[#efefef] dark:border-[#262626]">
+              <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-[#171717] rounded-2xl shadow-sm">
                 <span className="text-6xl mb-4">💡</span>
                 <h3 className="text-lg font-bold text-[#262626] dark:text-[#fafafa] mb-2">Ще немає ідей</h3>
                 <p className="text-[#737373] dark:text-[#a3a3a3] text-sm mb-4 max-w-xs">Опиши свою ідею — школа допоможе її реалізувати!</p>
@@ -899,8 +934,8 @@ const App: React.FC = () => {
         const foundCount = lostItems.filter(i => i.status === 'found').length;
         const filteredLostItems = lostFilter === 'all' ? lostItems : lostItems.filter(i => i.status === lostFilter);
         return (
-          <div className="space-y-4 lg:space-y-5 pb-24 md:pb-0">
-             <div className="bg-rose-50 dark:bg-rose-900/20 rounded-2xl p-5 border border-rose-100 dark:border-rose-800 mb-4">
+          <div className="space-y-4 pb-24 md:pb-0">
+             <div className="bg-rose-50 dark:bg-rose-900/20 rounded-2xl p-5 mb-4">
                <div className="flex items-center justify-between flex-wrap gap-3">
                  <div>
                    <h2 className="text-xl font-bold text-slate-900 dark:text-[#fafafa]">Бюро знахідок</h2>
@@ -928,7 +963,7 @@ const App: React.FC = () => {
                </div>
              </div>
              {lostItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-[#171717] rounded-2xl border border-[#efefef] dark:border-[#262626] border-dashed">
+                <div className="flex flex-col items-center justify-center py-16 text-center bg-white dark:bg-[#171717] rounded-2xl shadow-sm">
                     <span className="text-6xl mb-4">🔍</span>
                     <p className="font-bold text-[#262626] dark:text-[#fafafa] mb-2">Поки що немає оголошень</p>
                     <p className="text-[#737373] dark:text-[#a3a3a3] text-sm mb-4">Будь першим — додай загублену чи знайдену річ</p>
@@ -937,7 +972,7 @@ const App: React.FC = () => {
                     </Button>
                 </div>
              ) : filteredLostItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center bg-white dark:bg-[#171717] rounded-2xl border border-[#efefef] dark:border-[#262626] border-dashed">
+                <div className="flex flex-col items-center justify-center py-12 text-center bg-white dark:bg-[#171717] rounded-2xl shadow-sm">
                   <span className="text-4xl mb-2">📭</span>
                   <p className="text-[#737373] dark:text-[#a3a3a3]">Немає оголошень у цій категорії</p>
                 </div>
@@ -974,66 +1009,68 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0a0a0a] text-[#262626] dark:text-[#fafafa] transition-colors">
       
-      {/* --- DESKTOP LAYOUT --- */}
+      {/* --- DESKTOP LAYOUT: центрована сітка + бокові панелі --- */}
       <div className="w-full min-h-screen flex">
         
-        {/* Left Sidebar (Desktop) */}
+        {/* Left Sidebar (Desktop) — оновлене меню */}
         <aside 
-          className={`hidden lg:flex flex-col w-52 fixed left-0 top-0 h-screen p-4 border-r border-[#efefef] dark:border-[#404040] bg-white dark:bg-[#0a0a0a] z-20 transition-transform duration-300 ${
+          className={`hidden lg:flex flex-col w-52 fixed left-0 top-0 h-screen bg-white dark:bg-[#0a0a0a] z-20 transition-transform duration-300 border-r border-gray-100 dark:border-[#262626] ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="flex items-center justify-between mb-6 px-1">
+          <div className="p-4 border-b border-gray-100 dark:border-[#262626]">
+            <div className="flex items-center justify-between gap-2">
              {viewedUser ? (
                <button 
                  onClick={() => setViewedUser(null)}
-                 className="flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-medium hover:opacity-80 py-1"
+                 className="flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-semibold text-sm py-2 px-2 -ml-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors"
                >
-                 <ArrowLeft size={18} />
+                 <ArrowLeft size={18} strokeWidth={2.5} />
                  <span>Назад</span>
                </button>
              ) : showBackToMenu ? (
                <button 
                  onClick={goBackToMenu}
-                 className="flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-medium hover:opacity-80 py-1"
+                 className="flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-semibold text-sm py-2 px-2 -ml-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors"
                >
-                 <ArrowLeft size={18} />
+                 <ArrowLeft size={18} strokeWidth={2.5} />
                  <span>Назад</span>
                </button>
              ) : (
-               <div className="flex items-center gap-2 cursor-pointer min-w-0" onClick={() => {setActiveTab(Tab.HOME); setViewedUser(null);}}>
-                 <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] p-1.5 rounded-lg text-white shadow-sm flex-shrink-0">
+               <div className="flex items-center gap-2 cursor-pointer min-w-0 py-1 px-1 rounded-lg hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors" onClick={() => {setActiveTab(Tab.HOME); setViewedUser(null);}}>
+                 <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] p-1.5 rounded-lg text-white flex-shrink-0">
                    <School size={20} />
                  </div>
-                 <h1 className="text-xl font-bold tracking-tight text-[#262626] dark:text-[#fafafa] truncate">Pervoz<span className="text-[#0095f6]">Hub</span></h1>
+                 <h1 className="text-base font-bold text-[#262626] dark:text-[#fafafa] truncate">Pervoz<span className="text-[#0095f6]">Hub</span></h1>
                </div>
              )}
              <div className="flex items-center gap-1 flex-shrink-0">
                <button 
                  onClick={() => setIsDark(!isDark)}
-                 className="p-1.5 rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-[#efefef] dark:hover:bg-[#262626]"
+                 className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors"
                  aria-label={isDark ? 'Світла тема' : 'Темна тема'}
                >
                  {isDark ? <Sun size={18} /> : <Moon size={18} />}
                </button>
                <button 
                  onClick={() => { setActiveTab(Tab.SEARCH); setViewedUser(null); }}
-                 className="p-1.5 rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-[#efefef] dark:hover:bg-[#262626]"
+                 className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors"
                  aria-label="Пошук"
                >
                  <Search size={18} />
                </button>
                <button 
                  onClick={() => setSidebarOpen(false)}
-                 className="p-1.5 rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-[#efefef] dark:hover:bg-[#262626]"
+                 className="w-9 h-9 flex items-center justify-center rounded-lg text-[#737373] dark:text-[#a3a3a3] hover:bg-gray-100 dark:hover:bg-[#262626] transition-colors"
                  aria-label="Сховати меню"
                >
                  <PanelLeftClose size={18} />
                </button>
              </div>
           </div>
+          </div>
           
-          <nav className="space-y-1 flex-1">
+          <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             <NavItem tab={Tab.HOME} icon={Home} label="Головна" />
             <NavItem tab={Tab.STARTUPS} icon={Lightbulb} label="Стартапи" />
             <CreateNavItem onClick={handleOpenModal} icon={PlusCircle} label="Створити" />
@@ -1042,56 +1079,57 @@ const App: React.FC = () => {
           </nav>
         </aside>
 
-        {/* Toggle sidebar when collapsed */}
+        {/* Кнопка відкрити меню, коли згорнуто */}
         {!sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="hidden lg:flex fixed left-0 top-20 z-30 p-2.5 rounded-r-xl bg-white dark:bg-[#171717]/95 backdrop-blur border border-l-0 border-[#efefef] dark:border-[#404040] shadow-md text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-white dark:hover:bg-[#262626] hover:text-[#262626] dark:hover:text-[#fafafa] transition-all"
+            className="hidden lg:flex fixed left-0 top-6 z-30 w-10 h-10 items-center justify-center rounded-r-xl bg-white dark:bg-[#171717] border border-l-0 border-gray-100 dark:border-[#262626] text-[#737373] dark:text-[#a3a3a3] hover:bg-gray-50 dark:hover:bg-[#262626] transition-all shadow-sm"
             aria-label="Показати меню"
           >
             <PanelLeftOpen size={20} />
           </button>
         )}
 
-        {/* Center Feed */}
-        <main className={`w-full max-w-[600px] min-w-0 pt-4 px-2 sm:px-4 lg:px-6 transition-[margin] duration-300 ${sidebarOpen ? 'lg:ml-52' : 'lg:ml-4'} xl:mr-80`}>
-          {/* Mobile Header */}
-          <header className="lg:hidden flex justify-between items-center py-3 px-4 mb-1 sticky top-0 z-20 bg-[#fafafa]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-md border-b border-[#efefef] dark:border-[#404040]">
+        {/* Центр: обгортка для центрування контенту на ПК */}
+        <div className={`flex-1 flex justify-center min-w-0 transition-[margin] duration-300 ${sidebarOpen ? 'lg:ml-52' : 'lg:ml-2'} xl:mr-72`}>
+        <main className="w-full max-w-[600px] pt-2 lg:pt-8 px-4 md:px-6 pb-24 lg:pb-8">
+          {/* Mobile Header — кнопка «Назад» зліва, touch targets 44x44 */}
+          <header className="lg:hidden flex justify-between items-center py-2 px-0 mb-2 sticky top-0 z-20 bg-[#fafafa]/90 dark:bg-[#0a0a0a]/90 backdrop-blur-xl safe-area-pt">
              {viewedUser ? (
                <button 
                  onClick={() => setViewedUser(null)}
-                 className="flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-medium hover:opacity-80"
+                 className="min-h-11 min-w-11 flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-semibold text-[15px] py-2 pl-1 pr-3 rounded-xl hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-all touch-manipulation"
                >
-                 <ArrowLeft size={20} />
+                 <ArrowLeft size={22} strokeWidth={2.5} />
                  Назад
                </button>
              ) : showBackToMenu ? (
                <button 
                  onClick={goBackToMenu}
-                 className="flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-medium hover:opacity-80"
+                 className="min-h-11 min-w-11 flex items-center gap-2 text-[#262626] dark:text-[#fafafa] font-semibold text-[15px] py-2 pl-1 pr-3 rounded-xl hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-all touch-manipulation"
                >
-                 <ArrowLeft size={20} />
+                 <ArrowLeft size={22} strokeWidth={2.5} />
                  Назад
                </button>
              ) : (
-               <div className="flex items-center gap-2 cursor-pointer" onClick={() => {setActiveTab(Tab.HOME); setViewedUser(null);}}>
-                 <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] p-1.5 rounded-lg text-white shadow-sm">
-                   <School size={18} />
+               <div className="min-h-11 flex items-center gap-2 cursor-pointer py-2 rounded-xl active:scale-95 transition-transform touch-manipulation" onClick={() => {setActiveTab(Tab.HOME); setViewedUser(null);}}>
+                 <div className="bg-gradient-to-br from-[#0095f6] to-[#00376b] p-2 rounded-xl text-white flex-shrink-0">
+                   <School size={20} />
                  </div>
                  <h1 className="text-xl font-bold text-[#262626] dark:text-[#fafafa]">Pervoz<span className="text-[#0095f6]">Hub</span></h1>
                </div>
              )}
-             <div className="flex items-center gap-1">
+             <div className="flex items-center gap-3">
                <button
                  onClick={() => setIsDark(!isDark)}
-                 className="p-2 rounded-full text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626]"
+                 className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-colors touch-manipulation"
                  aria-label={isDark ? 'Світла тема' : 'Темна тема'}
                >
-                 {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                 {isDark ? <Sun size={22} /> : <Moon size={22} />}
                </button>
                <button 
                  onClick={() => { setActiveTab(Tab.SEARCH); setViewedUser(null); }}
-                 className="p-2 -mr-2 rounded-full text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626]"
+                 className="min-h-11 min-w-11 flex items-center justify-center rounded-xl text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-colors touch-manipulation"
                  aria-label="Пошук"
                >
                  <Search size={22} />
@@ -1101,21 +1139,13 @@ const App: React.FC = () => {
 
           {renderContent()}
         </main>
+        </div>
 
         {/* Right Sidebar (Desktop) */}
-        <aside className="hidden xl:block w-80 fixed right-0 top-0 h-screen p-6 overflow-y-auto no-scrollbar border-l border-[#efefef] dark:border-[#404040] bg-white dark:bg-[#0a0a0a] z-20">
-          <div className="sticky top-0 bg-white dark:bg-[#0a0a0a] pt-2 pb-4 z-10">
-            <button
-              onClick={() => { setActiveTab(Tab.SEARCH); setViewedUser(null); }}
-              className="w-full flex items-center gap-3 bg-slate-100 dark:bg-[#262626] border-0 rounded-xl py-2.5 px-4 text-sm text-slate-500 dark:text-[#a3a3a3] hover:bg-slate-200 dark:hover:bg-[#404040] transition-colors text-left"
-            >
-              <Search className="text-slate-400 dark:text-[#a3a3a3] flex-shrink-0" size={18} />
-              <span>Пошук людей...</span>
-            </button>
-          </div>
-
+        <aside className="hidden xl:block w-72 fixed right-0 top-0 h-screen py-6 px-4 overflow-y-auto no-scrollbar bg-white dark:bg-[#0a0a0a] z-20 border-l border-gray-100 dark:border-[#262626]">
+            <div className="max-w-[260px] mx-auto">
             <CountdownWidget />
-            <div className="bg-[#fafafa] dark:bg-[#171717] rounded-2xl p-4 border border-[#efefef] dark:border-[#404040] mb-6 mt-6">
+            <div className="bg-gray-50 dark:bg-[#171717] rounded-2xl p-4 mt-6">
             <h3 className="font-semibold text-[#262626] dark:text-[#fafafa] mb-4 text-sm uppercase tracking-wide">Топ ідей</h3>
             <div className="space-y-4">
               {[...startups].sort((a, b) => b.currentSupport - a.currentSupport).slice(0, 3).map((s, i) => (
@@ -1134,8 +1164,8 @@ const App: React.FC = () => {
           </div>
 
             {posts.some(p => p.isAnnouncement) && (
-            <div className="bg-amber-50/80 dark:bg-amber-900/20 rounded-2xl p-4 border border-amber-200/60 dark:border-amber-700/50">
-              <h3 className="font-bold text-amber-900 dark:text-amber-200 mb-2 flex items-center gap-2">
+            <div className="bg-amber-50/80 dark:bg-amber-900/20 rounded-2xl p-4 mt-6">
+              <h3 className="font-bold text-amber-900 dark:text-amber-200 mb-2 flex items-center gap-2 text-sm">
                 <AlertCircle size={16} /> Оголошення
               </h3>
               <p className="text-xs text-amber-800 dark:text-amber-200/90 leading-relaxed font-medium line-clamp-2">
@@ -1143,60 +1173,80 @@ const App: React.FC = () => {
               </p>
             </div>
           )}
+            </div>
         </aside>
       </div>
 
-      {/* --- MOBILE BOTTOM NAVIGATION --- */}
-      <nav className="lg:hidden mobile-nav-fixed fixed bottom-0 left-0 right-0 w-full bg-white dark:bg-[#0a0a0a] border-t border-[#efefef] dark:border-[#404040] px-2 py-2 flex justify-around items-center z-[100] safe-area-pb">
-        <NavItem tab={Tab.HOME} icon={Home} label="Головна" />
-        <NavItem tab={Tab.STARTUPS} icon={Lightbulb} label="Ідеї" />
-        <CreateNavItem onClick={handleOpenModal} icon={PlusCircle} label="Створити" />
-        <NavItem tab={Tab.NOTIFICATIONS} icon={Bell} label="Сповіщення" />
-        <NavItem tab={Tab.SERVICES} icon={Menu} label="Меню" />
-      </nav>
+      {/* --- MOBILE BOTTOM NAV: ховається при модалках/повноекрані, компактний --- */}
+      {!isAnyModalOrOverlayOpen && (
+        <nav className="lg:hidden mobile-nav-fixed fixed bottom-0 left-0 right-0 w-full bg-[#fafafa]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-xl px-2 py-2 flex justify-around items-center gap-1 z-[100] safe-area-pb">
+          <NavItem tab={Tab.HOME} icon={Home} label="Головна" compact />
+          <NavItem tab={Tab.STARTUPS} icon={Lightbulb} label="Ідеї" compact />
+          <CreateNavItem onClick={handleOpenModal} icon={PlusCircle} label="Створити" compact />
+          <NavItem tab={Tab.NOTIFICATIONS} icon={Bell} label="Сповіщ." compact />
+          <NavItem tab={Tab.SERVICES} icon={Menu} label="Меню" compact />
+        </nav>
+      )}
 
       {/* --- CREATE MODAL --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={handleCloseModal}></div>
-          <div className="relative bg-white dark:bg-[#171717] w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl p-6 animate-slide-up md:animate-scale-in flex flex-col max-h-[90vh] border border-[#efefef] dark:border-[#404040]">
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-[#fafafa]">Створити</h2>
-              <button onClick={handleCloseModal} className="p-2 bg-slate-100 dark:bg-[#262626] rounded-full text-slate-500 dark:text-[#a3a3a3] hover:bg-slate-200 dark:hover:bg-[#404040]">
-                <X size={20} />
-              </button>
+        <div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center p-0 md:p-4" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-0" onClick={handleCloseModal} aria-hidden="true" />
+          <div
+            className="relative z-10 bg-white dark:bg-[#171717] w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-slide-up md:animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with drag handle (mobile) and close */}
+            <div className="flex-shrink-0 pt-2 pb-1 px-4 md:pt-4 md:px-6">
+              <div className="w-8 h-1 rounded-full bg-[#c4c4c4] dark:bg-[#404040] mx-auto mb-3 md:hidden" aria-hidden="true" />
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold text-[#262626] dark:text-[#fafafa]">Новий пост</h2>
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="min-w-11 min-h-11 flex items-center justify-center rounded-full text-[#262626] dark:text-[#fafafa] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 transition-all touch-manipulation"
+                  aria-label="Закрити"
+                >
+                  <X size={22} strokeWidth={2.5} />
+                </button>
+              </div>
             </div>
             
+            <div className="flex-1 overflow-y-auto no-scrollbar px-4 pb-4 md:px-6 md:pb-6">
             {/* Mode Switcher */}
-            <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar flex-shrink-0">
-              <button 
+            <div className="flex gap-3 mb-4 overflow-x-auto pb-2 no-scrollbar flex-shrink-0">
+              <button
+                type="button"
                 onClick={() => setCreateMode('post')}
-                className={`px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors ${createMode === 'post' ? 'bg-[#0095f6] text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
+                className={`min-h-11 px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors active:scale-95 touch-manipulation ${createMode === 'post' ? 'bg-[#0095f6] text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
               >
                 Пост
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => setCreateMode('startup')}
-                className={`px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors ${createMode === 'startup' ? 'bg-[#0095f6] text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
+                className={`min-h-11 px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors active:scale-95 touch-manipulation ${createMode === 'startup' ? 'bg-[#0095f6] text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
               >
                 Стартап
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => setCreateMode('lost_found')}
-                className={`px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors ${createMode === 'lost_found' ? 'bg-rose-500 text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
+                className={`min-h-11 px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors active:scale-95 touch-manipulation ${createMode === 'lost_found' ? 'bg-rose-500 text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
               >
                  Бюро знахідок
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={() => setCreateMode('announcement')}
-                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors ${createMode === 'announcement' ? 'bg-amber-500 text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
+                className={`min-h-11 flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-full whitespace-nowrap transition-colors active:scale-95 touch-manipulation ${createMode === 'announcement' ? 'bg-amber-500 text-white' : 'bg-[#efefef] dark:bg-[#262626] text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#e0e0e0] dark:hover:bg-[#404040]'}`}
               >
                  <AlertCircle size={14} /> Оголошення
               </button>
             </div>
 
-            {/* Scrollable Content Area */}
-            <div className="flex-1 overflow-y-auto no-scrollbar">
+            {/* Content Area */}
+            <div className="min-h-0">
               
               {/* STARTUP SPECIFIC FIELDS */}
               {createMode === 'startup' && (
@@ -1312,12 +1362,10 @@ const App: React.FC = () => {
               )}
 
             </div>
-
-            {/* Footer Actions */}
-            <div className="flex items-center justify-between mt-4 flex-shrink-0 pt-2 border-t border-slate-50">
-               <div></div> {/* Spacer, AI removed */}
-              
-              <Button onClick={handlePublish} disabled={( !content && createMode !== 'lost_found' ) || isPublishing} isLoading={isPublishing}>
+            </div>
+            {/* Footer — fixed at bottom of modal, divider 1px */}
+            <div className="flex-shrink-0 px-4 py-4 border-t border-gray-100 dark:border-[#262626]">
+              <Button onClick={handlePublish} disabled={( !content && createMode !== 'lost_found' ) || isPublishing} isLoading={isPublishing} className="w-full">
                 Опублікувати
               </Button>
             </div>
@@ -1344,6 +1392,19 @@ const App: React.FC = () => {
               onSave={handleSaveProfile}
               onError={(msg) => showToast('error', msg)}
           />
+      )}
+
+      {awardBadgeStudent && currentUser && (
+        <AwardBadgeModal
+          student={awardBadgeStudent}
+          currentUser={currentUser}
+          onClose={() => setAwardBadgeStudent(null)}
+          onSuccess={() => {
+            setBadgeRefreshTrigger((t) => t + 1);
+            showToast('success', 'Відзнаку видано');
+          }}
+          onError={(msg) => showToast('error', msg)}
+        />
       )}
 
       {showMoodModal && currentUser && (

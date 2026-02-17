@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Post, User, Startup, LostItem, Comment, UserRole, StartupStatus, isSchoolAdmin, BellSlot, Event, Notification, PortfolioItem, PortfolioItemType, MoodLog, StartupTeamRequest, TeamRequestStatus } from '../types';
+import { Post, User, Startup, LostItem, Comment, UserRole, StartupStatus, isSchoolAdmin, BellSlot, Event, Notification, PortfolioItem, PortfolioItemType, MoodLog, StartupTeamRequest, TeamRequestStatus, Badge, UserBadgeWithDetails } from '../types';
 
 // --- Types Mappers ---
 // Converts Supabase DB response to our App Types
@@ -862,4 +862,78 @@ export const fetchNextEvent = async (): Promise<Event | null> => {
     }
   }
   return null;
+};
+
+// --- Badges (Відзнаки) ---
+
+export const fetchBadges = async (): Promise<Badge[]> => {
+  const { data, error } = await supabase
+    .from('badges')
+    .select('*')
+    .order('rarity', { ascending: true });
+  if (error) throw error;
+  return (data || []).map((b: any) => ({
+    id: b.id,
+    name: b.name,
+    icon: b.icon,
+    description: b.description ?? null,
+    rarity: b.rarity,
+    color_from: b.color_from ?? '#6366f1',
+    color_to: b.color_to ?? '#8b5cf6',
+    created_at: b.created_at
+  }));
+};
+
+export const fetchUserBadges = async (userId: string): Promise<UserBadgeWithDetails[]> => {
+  const { data, error } = await supabase
+    .from('user_badges')
+    .select(`
+      id,
+      user_id,
+      badge_id,
+      awarded_by,
+      comment,
+      created_at,
+      badge:badges(*),
+      awarder:profiles!awarded_by(id, name, avatar_url, role, grade)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((ub: any) => ({
+    id: ub.id,
+    user_id: ub.user_id,
+    badge_id: ub.badge_id,
+    awarded_by: ub.awarded_by,
+    comment: ub.comment,
+    created_at: ub.created_at,
+    badge: {
+      id: ub.badge?.id,
+      name: ub.badge?.name,
+      icon: ub.badge?.icon,
+      description: ub.badge?.description ?? null,
+      rarity: ub.badge?.rarity,
+      color_from: ub.badge?.color_from ?? '#6366f1',
+      color_to: ub.badge?.color_to ?? '#8b5cf6',
+      created_at: ub.badge?.created_at
+    },
+    awarder: ub.awarder ? mapProfileToUser(ub.awarder) : undefined
+  }));
+};
+
+export const awardBadge = async (
+  userId: string,
+  badgeId: string,
+  awardedBy: string,
+  comment: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('user_badges')
+    .insert({
+      user_id: userId,
+      badge_id: badgeId,
+      awarded_by: awardedBy,
+      comment: comment.trim()
+    });
+  if (error) throw error;
 };

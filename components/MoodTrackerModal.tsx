@@ -34,8 +34,8 @@ export const MoodTrackerModal: React.FC<MoodTrackerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 safe-area-pb">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#171717] w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up border border-[#efefef] dark:border-[#404040]">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => onClose?.()} aria-hidden="true" />
+      <div className="relative bg-white dark:bg-[#171717] w-full max-w-sm rounded-2xl shadow-2xl p-6 animate-slide-up" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-xl font-bold text-slate-900 dark:text-[#fafafa] text-center mb-2">
           Ранкове коло
         </h2>

@@ -69,35 +69,38 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
 
   return (
     <div className="animate-fade-in">
-      {isOwnProfile && (
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="w-full mb-4 gap-2"
-        >
-          <PlusCircle size={18} />
-          Додати досягнення
-        </Button>
+      {isOwnProfile && items.length > 0 && (
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="text-sm font-semibold text-[#0095f6] hover:underline flex items-center gap-1.5"
+          >
+            <PlusCircle size={16} /> Додати
+          </button>
+        </div>
       )}
 
       {items.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-[#171717] rounded-2xl border border-[#efefef] dark:border-[#404040] border-dashed">
-          <ImageIcon size={48} className="mx-auto text-slate-300 dark:text-[#404040] mb-3" />
-          <p className="text-slate-500 dark:text-[#a3a3a3] font-medium mb-1">Портфоліо порожнє</p>
-          <p className="text-sm text-slate-400 dark:text-[#737373] mb-4">
-            {isOwnProfile ? 'Додайте сертифікати, пости чи стартапи' : 'У користувача ще немає досягнень'}
+        <div className="text-center py-14 bg-[#fafafa] dark:bg-[#171717] rounded-2xl">
+          <div className="w-16 h-16 rounded-full bg-[#efefef] dark:bg-[#262626] flex items-center justify-center mx-auto mb-4">
+            <ImageIcon size={28} className="text-[#c4c4c4] dark:text-[#404040]" />
+          </div>
+          <p className="text-[#262626] dark:text-[#fafafa] font-semibold mb-1">Портфоліо</p>
+          <p className="text-sm text-[#737373] dark:text-[#a3a3a3] mb-4 max-w-xs mx-auto">
+            {isOwnProfile ? 'Додайте сертифікати, пости чи стартапи — вони зʼявляться тут' : 'У користувача ще немає досягнень'}
           </p>
           {isOwnProfile && (
-            <Button variant="secondary" onClick={() => setShowAddModal(true)} className="gap-2">
-              <PlusCircle size={16} /> Додати досягнення
+            <Button onClick={() => setShowAddModal(true)} className="gap-2">
+              <PlusCircle size={18} /> Додати досягнення
             </Button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-0.5 sm:gap-1">
           {items.map((item) => (
             <div
               key={item.id}
-              className="relative group bg-white dark:bg-[#171717] rounded-2xl border border-[#efefef] dark:border-[#404040] overflow-hidden aspect-square"
+              className="relative group aspect-square bg-[#efefef] dark:bg-[#262626] overflow-hidden"
             >
               <div className="absolute inset-0">
                 {item.image_url ? (
@@ -112,23 +115,25 @@ export const PortfolioTab: React.FC<PortfolioTabProps> = ({
                   </div>
                 )}
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="absolute bottom-0 left-0 right-0 p-3 text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-[10px] font-bold uppercase text-white/90">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 sm:group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-0 left-0 right-0 p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <span className="text-[10px] font-semibold uppercase text-white/90">
                   {TYPE_LABELS[item.type] || item.type}
                 </span>
-                <p className="text-sm font-bold truncate">{item.title}</p>
+                <p className="text-xs font-bold truncate">{item.title}</p>
               </div>
               {isOwnProfile && (
                 <button
+                  type="button"
                   onClick={() => handleDelete(item)}
                   disabled={deletingId === item.id}
-                  className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-rose-600 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                  className="absolute top-1.5 right-1.5 p-1.5 bg-black/50 text-white rounded-full hover:bg-rose-500 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50 z-10"
+                  aria-label="Видалити"
                 >
                   {deletingId === item.id ? (
-                    <Loader2 size={14} className="animate-spin" />
+                    <Loader2 size={12} className="animate-spin" />
                   ) : (
-                    <Trash2 size={14} />
+                    <Trash2 size={12} />
                   )}
                 </button>
               )}

@@ -14,19 +14,20 @@ export const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseStyles = "inline-flex items-center justify-center rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-95";
+  const baseStyles = "inline-flex items-center justify-center rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-95 touch-manipulation";
   
   const variants = {
-    primary: "bg-[#0095f6] text-white hover:bg-[#0084e0] focus:ring-[#0095f6]/50",
-    secondary: "bg-white text-[#262626] border border-[#efefef] hover:bg-[#fafafa] hover:text-[#0095f6] focus:ring-[#0095f6]/30",
-    ghost: "bg-transparent text-[#8e8e8e] hover:bg-[#f5f5f5] hover:text-[#262626]",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-500"
+    primary: "bg-[#0095f6] text-white hover:bg-[#0084e0] focus:ring-[#0095f6]/50 dark:bg-[#0095f6] dark:hover:bg-[#0084e0]",
+    secondary: "bg-[#efefef] dark:bg-[#262626] text-[#262626] dark:text-[#fafafa] hover:bg-[#e5e5e5] dark:hover:bg-[#404040] focus:ring-[#0095f6]/30",
+    ghost: "bg-transparent text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#f5f5f5] dark:hover:bg-[#262626] hover:text-[#262626] dark:hover:text-[#fafafa]",
+    danger: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 focus:ring-red-500"
   };
 
+  /* Золоте правило: мін. висота 44px (h-11) для основних кнопок */
   const sizes = {
-    sm: "h-8 px-3 text-xs",
-    md: "h-10 px-4 text-sm",
-    lg: "h-12 px-6 text-base"
+    sm: "min-h-9 h-9 px-3 text-xs",
+    md: "min-h-11 h-11 px-4 text-sm",
+    lg: "min-h-12 h-12 px-6 text-base"
   };
 
   return (

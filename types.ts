@@ -151,3 +151,39 @@ export interface Notification {
   text?: string; // for comments
   timestamp: string;
 }
+
+// ——— Гейміфікація: Відзнаки (Badges) ———
+export type BadgeRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface Badge {
+  id: string;
+  name: string;
+  icon: string;       // URL або емодзі
+  description: string | null;
+  rarity: BadgeRarity;
+  color_from: string;
+  color_to: string;
+  created_at?: string;
+}
+
+export interface UserBadge {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  awarded_by: string;
+  comment: string;
+  created_at: string;
+}
+
+/** Один запис user_badges з повним badge та профілем того, хто видав */
+export interface UserBadgeWithDetails extends UserBadge {
+  badge: Badge;
+  awarder?: User;
+}
+
+/** Група (стек) однакових відзнак: один badge + кількість */
+export interface UserBadgeGroup {
+  badge: Badge;
+  count: number;
+  items: UserBadgeWithDetails[]; // усі записи для історії
+}

@@ -38,8 +38,8 @@ export const StartupCard: React.FC<StartupCardProps> = ({
   const isAuthor = currentUser && startup.author.id === currentUser.id;
 
   return (
-    <div className={`bg-white dark:bg-[#171717] rounded-2xl p-5 mb-4 border transition-all group ${
-      isAccepted ? 'border-emerald-200 dark:border-emerald-700' : 'border-[#efefef] dark:border-[#404040]'
+    <div className={`bg-white dark:bg-[#171717] rounded-2xl p-5 mb-4 shadow-sm transition-all group ${
+      isAccepted ? 'ring-1 ring-emerald-200/50 dark:ring-emerald-700/30' : ''
     }`}>
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -66,13 +66,13 @@ export const StartupCard: React.FC<StartupCardProps> = ({
 
       <div className="flex flex-wrap gap-2 mb-4">
         {startup.tags.map(tag => (
-          <span key={tag} className="text-[10px] px-2 py-1 bg-slate-50 dark:bg-[#262626] text-slate-500 dark:text-[#a3a3a3] rounded-md border border-slate-100 dark:border-[#404040]">
+          <span key={tag} className="text-[10px] px-2 py-1 bg-[#f0f0f0] dark:bg-[#262626] text-slate-500 dark:text-[#a3a3a3] rounded-lg">
             #{tag}
           </span>
         ))}
       </div>
 
-      <div className="bg-slate-50 dark:bg-[#262626] rounded-xl p-3 mb-4 border border-slate-100 dark:border-[#404040]">
+      <div className="bg-[#f5f5f5] dark:bg-[#262626] rounded-xl p-3 mb-4">
         <div className="flex justify-between text-xs mb-1.5">
           <span className="font-medium text-slate-700 dark:text-[#a3a3a3]">Підтримка (голосів)</span>
           <span className="font-bold text-indigo-600 dark:text-indigo-400">{startup.currentSupport} / {startup.goal}</span>

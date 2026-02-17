@@ -23,12 +23,12 @@ export const ServicesMenu: React.FC<ServicesMenuProps> = ({ onNavigate, isAdmin 
       <h2 className="text-xl font-bold text-[#262626] dark:text-[#fafafa] mb-1">Сервіси</h2>
       <p className="text-sm text-[#737373] dark:text-[#a3a3a3]">Оберіть розділ</p>
     </div>
-    <div className="space-y-3">
-      {menuItems.map(({ id, icon: Icon, label }) => (
+    <div className="rounded-2xl overflow-hidden bg-white dark:bg-[#171717] shadow-sm">
+      {menuItems.map(({ id, icon: Icon, label }, i) => (
         <button
           key={id}
           onClick={() => onNavigate(id)}
-          className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-[#171717] border border-[#efefef] dark:border-[#404040] hover:bg-[#fafafa] dark:hover:bg-[#262626] transition-colors text-left"
+          className={`w-full flex items-center gap-4 p-4 hover:bg-[#fafafa] dark:hover:bg-[#262626] active:bg-[#f0f0f0] dark:active:bg-[#404040] transition-colors text-left ${i < menuItems.length - 1 ? 'border-b border-[#efefef] dark:border-[#262626]' : ''}`}
         >
           <Icon size={22} className="text-[#737373] dark:text-[#a3a3a3] flex-shrink-0" />
           <span className="font-semibold text-[#262626] dark:text-[#fafafa] flex-1 text-left">{label}</span>

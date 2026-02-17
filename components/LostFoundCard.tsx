@@ -23,9 +23,9 @@ export const LostFoundCard: React.FC<LostFoundCardProps> = ({
   const canManage = currentUser && (currentUser.id === item.author.id || isSchoolAdmin(currentUser.role));
 
   return (
-    <div className="bg-white dark:bg-[#171717] rounded-2xl overflow-hidden border border-[#efefef] dark:border-[#404040] mb-4 transition-all">
+    <div className="bg-white dark:bg-[#171717] rounded-2xl overflow-hidden shadow-sm mb-4 transition-all">
       {/* Header Badge */}
-      <div className={`px-4 py-3 flex items-center justify-between ${isFound ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-b border-emerald-100 dark:border-emerald-700' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-b border-rose-100 dark:border-rose-800'}`}>
+      <div className={`px-4 py-3 flex items-center justify-between ${isFound ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400'}`}>
         <div className="flex items-center gap-2 font-bold uppercase text-xs tracking-wider">
           {isFound ? (
             <>
@@ -43,7 +43,7 @@ export const LostFoundCard: React.FC<LostFoundCardProps> = ({
       <div className="p-4">
         <div className="flex gap-4">
           {/* Image Thumbnail */}
-          <div className="w-28 h-28 flex-shrink-0 bg-slate-100 dark:bg-[#262626] rounded-xl overflow-hidden border border-slate-100 dark:border-[#404040] cursor-pointer hover:ring-2 hover:ring-indigo-200 dark:hover:ring-indigo-600 transition-all">
+          <div className="w-28 h-28 flex-shrink-0 bg-[#f0f0f0] dark:bg-[#262626] rounded-xl overflow-hidden cursor-pointer hover:ring-2 hover:ring-[#0095f6]/30 transition-all">
             <img
               src={item.image}
               alt={item.title}

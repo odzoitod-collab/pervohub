@@ -56,13 +56,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}></div>
-      
-      <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
-        <div className="flex justify-between items-center p-4 border-b border-slate-100">
-          <h2 className="text-lg font-bold text-slate-900">Редагувати профіль</h2>
-          <button onClick={onClose} className="p-2 bg-slate-50 rounded-full text-slate-500 hover:bg-slate-100">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="relative bg-white dark:bg-[#171717] w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-scale-in" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center p-4 border-b border-gray-100 dark:border-[#262626]">
+          <h2 className="text-lg font-bold text-[#262626] dark:text-[#fafafa]">Редагувати профіль</h2>
+          <button type="button" onClick={onClose} className="min-w-11 min-h-11 flex items-center justify-center rounded-full text-[#737373] dark:text-[#a3a3a3] hover:bg-[#efefef] dark:hover:bg-[#262626] active:scale-95 touch-manipulation" aria-label="Закрити">
             <X size={20} />
           </button>
         </div>
@@ -72,50 +71,52 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ user, onClos
           {/* Avatar — зберігається в Supabase Storage (bucket images/avatars) */}
           <div className="flex flex-col items-center mb-6">
             <div className="relative group cursor-pointer">
-                <img src={avatarUrl} alt="Аватар" className="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-md" />
+                <img src={avatarUrl} alt="Аватар" className="w-24 h-24 rounded-full object-cover border-4 border-[#efefef] dark:border-[#262626] shadow-md" />
                 <label className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                     <Upload className="text-white" size={24} />
                     <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} />
                 </label>
             </div>
-            <span className="text-xs text-slate-400 mt-2">Натисни для зміни — зберігається в хмарі</span>
+            <span className="text-xs text-[#737373] dark:text-[#a3a3a3] mt-2">Натисни для зміни фото</span>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Ім'я та Прізвище</label>
+            <label className="block text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase mb-1">Ім'я та Прізвище</label>
             <input 
               type="text" 
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900"
+              className="w-full bg-[#fafafa] dark:bg-[#262626] border border-[#efefef] dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0095f6] focus:outline-none font-semibold text-[#262626] dark:text-[#fafafa] placeholder-[#a3a3a3]"
+              placeholder="Ім'я"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Роль (незмінна)</label>
-                 <div className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3 text-sm font-medium text-slate-500">
+                 <label className="block text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase mb-1">Роль</label>
+                 <div className="w-full bg-[#f0f0f0] dark:bg-[#262626] rounded-xl p-3 text-sm font-medium text-[#737373] dark:text-[#a3a3a3]">
                      {user.role}
                  </div>
             </div>
             <div>
-                 <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Клас</label>
+                 <label className="block text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase mb-1">Клас</label>
                  <input 
                     type="text" 
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-900"
+                    className="w-full bg-[#fafafa] dark:bg-[#262626] border border-[#efefef] dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0095f6] focus:outline-none font-semibold text-[#262626] dark:text-[#fafafa]"
+                    placeholder="11-А"
                 />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Про себе (Bio)</label>
+            <label className="block text-xs font-bold text-[#737373] dark:text-[#a3a3a3] uppercase mb-1">Про себе</label>
             <textarea 
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium text-slate-800 resize-none"
+              className="w-full bg-[#fafafa] dark:bg-[#262626] border border-[#efefef] dark:border-[#404040] rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#0095f6] focus:outline-none font-medium text-[#262626] dark:text-[#fafafa] placeholder-[#a3a3a3] resize-none"
               placeholder="Напиши щось про себе..."
             />
           </div>

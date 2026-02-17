@@ -27,7 +27,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
 
     if (post.images.length === 1) {
       return (
-        <div className="mt-2 md:mt-3 rounded-none md:rounded-xl overflow-hidden">
+        <div className="mt-2 md:mt-3 rounded-xl overflow-hidden">
           <img 
             src={post.images[0]} 
             alt="Post content" 
@@ -40,7 +40,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
 
     if (post.images.length === 2) {
       return (
-        <div className="mt-2 md:mt-3 grid grid-cols-2 gap-0.5 md:gap-1 rounded-none md:rounded-xl overflow-hidden">
+        <div className="mt-2 md:mt-3 grid grid-cols-2 gap-0.5 md:gap-1 rounded-xl overflow-hidden">
           {post.images.map((img, idx) => (
             <img 
               key={idx} 
@@ -54,8 +54,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
       );
     }
 
-    return (
-      <div className="mt-2 md:mt-3 grid grid-cols-2 gap-0.5 md:gap-1 rounded-none md:rounded-xl overflow-hidden">
+      return (
+      <div className="mt-2 md:mt-3 grid grid-cols-2 gap-0.5 md:gap-1 rounded-xl overflow-hidden">
         <img 
             src={post.images[0]} 
             className="w-full h-64 object-cover col-span-2 cursor-pointer"
@@ -83,8 +83,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
 
   return (
     <div className={`
-      relative bg-white dark:bg-[#171717] rounded-none md:rounded-2xl p-3 md:p-5 mb-0 md:mb-4 transition-all duration-200 border-x-0 border-t-0 md:border border-b border-[#efefef] dark:border-[#404040]
-      ${post.isAnnouncement ? 'md:border-amber-200 dark:md:border-amber-700' : ''}
+      relative bg-white dark:bg-[#171717] rounded-2xl p-4 mb-3 md:mb-4 transition-all duration-200 shadow-sm
+      ${post.isAnnouncement ? 'ring-1 ring-amber-200/50 dark:ring-amber-700/30' : ''}
     `}>
       {post.isAnnouncement && (
         <div className="absolute -top-3 left-4 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm border border-amber-200 dark:border-amber-700">
@@ -93,28 +93,29 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-2 md:mb-3">
-        <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-          <button onClick={() => onUserClick(post.author)} className="focus:outline-none flex-shrink-0">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button type="button" onClick={() => onUserClick(post.author)} className="min-w-11 min-h-11 flex items-center justify-center flex-shrink-0 rounded-full overflow-hidden focus:outline-none active:scale-95 transition-transform touch-manipulation">
             <img 
               src={post.author.avatar} 
               alt={post.author.name} 
-              className={`w-8 h-8 md:w-10 md:h-10 rounded-full object-cover ring-2 transition-transform active:scale-95 ${isDirector ? 'ring-amber-400 dark:ring-amber-500' : 'ring-[#efefef] dark:ring-[#404040]'}`}
+              className={`w-10 h-10 rounded-full object-cover ring-2 ${isDirector ? 'ring-amber-400 dark:ring-amber-500' : 'ring-[#efefef] dark:ring-[#404040]'}`}
             />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
               <button 
+                type="button"
                 onClick={() => onUserClick(post.author)}
-                className="font-semibold text-[#262626] dark:text-[#fafafa] text-xs md:text-sm hover:underline decoration-[#8e8e8e] dark:decoration-[#a3a3a3] underline-offset-2 truncate"
+                className="font-semibold text-[15px] text-[#262626] dark:text-[#fafafa] hover:underline decoration-[#8e8e8e] dark:decoration-[#a3a3a3] underline-offset-2 truncate text-left"
               >
                 {post.author.name}
               </button>
               {post.author.grade && (
-                <span className="text-[10px] text-[#8e8e8e] dark:text-[#a3a3a3]">• {post.author.grade}</span>
+                <span className="text-xs text-[#8e8e8e] dark:text-[#a3a3a3]">• {post.author.grade}</span>
               )}
               {post.author.role !== UserRole.STUDENT && (
-                <span className={`text-[9px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-md font-bold hidden sm:inline ${
+                <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold hidden sm:inline ${
                   isDirector || post.author.role === UserRole.SCHOOL_ADMIN ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200' : 
                   post.author.role === UserRole.PARENT ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300' :
                   'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
@@ -123,21 +124,23 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
                 </span>
               )}
             </div>
-            <p className="text-[10px] md:text-xs text-[#8e8e8e] dark:text-[#a3a3a3] font-medium">{post.timestamp}</p>
+            <p className="text-xs text-[#8e8e8e] dark:text-[#a3a3a3] mt-0.5">{post.timestamp}</p>
           </div>
         </div>
         {canDelete && (
-          <div className="relative flex-shrink-0 ml-1">
+          <div className="relative flex-shrink-0">
             <button
+              type="button"
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1.5 md:p-2 rounded-full text-slate-400 dark:text-[#a3a3a3] hover:bg-slate-100 dark:hover:bg-[#262626] hover:text-slate-600 dark:hover:text-[#fafafa]"
+              className="min-w-11 min-h-11 flex items-center justify-center rounded-full text-[#8e8e8e] dark:text-[#a3a3a3] hover:bg-[#f5f5f5] dark:hover:bg-[#262626] hover:text-[#262626] dark:hover:text-[#fafafa] active:scale-95 transition-all touch-manipulation"
+              aria-label="Ще"
             >
-              <MoreVertical size={16} className="md:w-[18px] md:h-[18px]" />
+              <MoreVertical size={20} />
             </button>
             {showMenu && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
-                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#262626] rounded-xl shadow-lg border border-slate-200 dark:border-[#404040] py-1 min-w-[160px]">
+                <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#262626] rounded-xl shadow-xl py-1 min-w-[160px]">
                   <button
                     onClick={() => { onDeletePost(post); setShowMenu(false); }}
                     className="w-full flex items-center gap-2 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
@@ -151,28 +154,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post, isLiked = false, curre
         )}
       </div>
 
-      <div className="mb-2 md:mb-4">
-        <p className={`text-[14px] md:text-[15px] leading-relaxed whitespace-pre-line ${isDirector ? 'text-slate-900 dark:text-[#fafafa] font-medium' : 'text-slate-800 dark:text-[#e5e5e5]'}`}>
+      <div className="mb-3">
+        <p className={`text-[14px] md:text-[15px] leading-relaxed whitespace-pre-line font-normal max-w-[70ch] ${isDirector ? 'text-[#262626] dark:text-[#fafafa] font-medium' : 'text-[#262626] dark:text-[#e5e5e5]'}`}>
           {post.content}
         </p>
         {renderImages()}
       </div>
 
-      <div className="flex items-center pt-2 md:pt-3 border-t border-[#efefef] dark:border-[#404040]">
-        <div className="flex gap-3 md:gap-4">
+      <div className="flex items-center pt-3 border-t border-gray-100 dark:border-[#262626]">
+        <div className="flex gap-3">
           <button
+            type="button"
             onClick={() => onLikeClick?.(post)}
-            className={`flex items-center gap-1.5 md:gap-2 transition-colors group py-1 pr-1 -ml-1 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-[#262626] ${isLiked ? 'text-rose-500' : 'text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-rose-500'}`}
+            className={`min-h-11 min-w-11 flex items-center gap-2 transition-colors group px-2 -ml-2 rounded-xl hover:bg-[#f5f5f5] dark:hover:bg-[#262626] active:scale-95 touch-manipulation ${isLiked ? 'text-rose-500' : 'text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-rose-500'}`}
           >
-            <Heart size={18} className={`transition-all stroke-2 flex-shrink-0 md:w-5 md:h-5 ${isLiked ? 'fill-rose-500' : 'group-hover:fill-rose-500'}`} />
-            <span className="text-xs md:text-sm font-semibold">{post.likes}</span>
+            <Heart size={20} className={`transition-all stroke-2 flex-shrink-0 ${isLiked ? 'fill-rose-500' : 'group-hover:fill-rose-500'}`} />
+            <span className="text-sm font-semibold">{post.likes}</span>
           </button>
           <button 
+            type="button"
             onClick={() => onCommentClick(post)}
-            className="flex items-center gap-1.5 md:gap-2 text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#0095f6] transition-colors py-1 pr-1 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-[#262626]"
+            className="min-h-11 min-w-11 flex items-center gap-2 text-[#8e8e8e] dark:text-[#a3a3a3] hover:text-[#0095f6] transition-colors px-2 rounded-xl hover:bg-[#f5f5f5] dark:hover:bg-[#262626] active:scale-95 touch-manipulation"
           >
-            <MessageSquare size={18} className="stroke-2 flex-shrink-0 md:w-5 md:h-5" />
-            <span className="text-xs md:text-sm font-semibold">{post.commentsCount}</span>
+            <MessageSquare size={20} className="stroke-2 flex-shrink-0" />
+            <span className="text-sm font-semibold">{post.commentsCount}</span>
           </button>
         </div>
       </div>

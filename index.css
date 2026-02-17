@@ -1,4 +1,4 @@
-/* PWA / Mobile: prevent zoom, stable layout */
+/* Telegram/Instagram-style: clean, borderless, safe areas */
 html {
   -webkit-text-size-adjust: 100%;
   min-height: 100%;
@@ -8,6 +8,32 @@ body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overflow-x: hidden;
+}
+
+/* Hide scrollbars for feed / modals (Telegram-like) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area: iOS Home indicator, notch */
+.safe-area-pb {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+.safe-area-pt {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* Touch targets: мінімум 44x44px для кнопок/іконок */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 @keyframes toast-in {
@@ -20,7 +46,6 @@ body {
     transform: translate(-50%, 0) scale(1);
   }
 }
-
 .animate-toast-in {
   animation: toast-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
